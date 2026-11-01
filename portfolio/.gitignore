@@ -1,0 +1,6 @@
+
+# Standalone portfolio dependencies and builds
+portfolio/node_modules/
+portfolio/dist/
+portfolio/.env.local
+portfolio/.env.*.local

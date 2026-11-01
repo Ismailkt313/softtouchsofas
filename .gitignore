@@ -28,3 +28,6 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# TypeScript build cache
+portfolio/tsconfig.tsbuildinfo
