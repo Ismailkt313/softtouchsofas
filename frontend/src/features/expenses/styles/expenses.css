@@ -343,6 +343,76 @@
   display: none;
 }
 
+.exp-empty-state {
+  padding: 3.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.exp-empty-state__icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background-color: var(--sts-sand-light, #f5ede2);
+  border: 1px solid var(--sts-sand, #e1d3c1);
+  color: var(--sts-walnut, #4b3425);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.95rem;
+}
+
+.exp-empty-state__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.exp-empty-state__title {
+  margin: 0 0 0.45rem;
+  font-family: var(--sts-font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sts-charcoal);
+  line-height: 1.3;
+}
+
+.exp-empty-state__text {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: var(--sts-charcoal-muted);
+  line-height: 1.5;
+  max-width: 440px;
+}
+
+.exp-empty-state__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.exp-empty-state__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--sts-sand);
+  border-top-color: var(--sts-walnut);
+  border-radius: 50%;
+  animation: exp-spin 0.8s linear infinite;
+  margin-bottom: 0.85rem;
+}
+
+@keyframes exp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .exp-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -1368,6 +1438,10 @@
   .exp-pagination__controls {
     justify-content: center;
     gap: 0.35rem;
+  }
+
+  .exp-empty-state {
+    padding: 2.5rem 1rem;
   }
 }
 

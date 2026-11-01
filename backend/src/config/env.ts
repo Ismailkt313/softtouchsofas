@@ -25,6 +25,7 @@ function parsePositiveNumber(raw: string | undefined, fallback: number): number 
 }
 
 export const env = {
+  HOST: process.env.HOST || '0.0.0.0',
   PORT: parseInt(process.env.PORT || '5000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
   CORS_ORIGINS: parseCorsOrigins(process.env.CORS_ORIGINS),

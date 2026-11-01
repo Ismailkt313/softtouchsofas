@@ -117,8 +117,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Soft Touch Sofas server is running on http://0.0.0.0:${PORT}`);
+  app.listen(PORT, env.HOST, () => {
+    console.log(`Soft Touch Sofas server is running on http://${env.HOST}:${PORT}`);
     console.log(`Allowed CORS origins: ${env.CORS_ORIGINS.join(', ')}`);
   });
 }

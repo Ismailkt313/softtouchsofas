@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 const FRONTEND_ROOT = path.dirname(fileURLToPath(import.meta.url))
 
@@ -95,24 +95,31 @@ function localOcrAssetsPlugin() {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), localOcrAssetsPlugin()],
-  server: {
-    host: true,
-    port: 5173,
-    strictPort: true,
-    allowedHosts: true,
-    cors: {
-      origin: true,
-      credentials: true,
-    },
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:5000',
-        changeOrigin: true,
-        headers: {
-          Origin: 'http://localhost:5173',
-        },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const devPort = Number(env.VITE_PORT) || 5173
+  const devBackendUrl =
+    env.VITE_DEV_BACKEND_URL || env.VITE_API_BASE_URL || 'http://127.0.0.1:5000'
+  const devOrigin = env.VITE_DEV_ORIGIN || ('http://localhost:' + devPort)
+
+  return {
+    plugins: [react(), localOcrAssetsPlugin()],
+    server: {
+      host: env.VITE_HOST === 'false' ? false : (env.VITE_HOST || true),
+      port: devPort,
+      strictPort: true,
+      allowedHosts: true,
+      cors: {
+        origin: true,
+        credentials: true,
+      },
+      proxy: {
+        '/api': {
+          target: devBackendUrl,
+          changeOrigin: true,
+          headers: {
+            Origin: devOrigin,
+          },
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes, req) => {
             if (req.headers.origin) {
@@ -128,4 +135,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

@@ -629,10 +629,29 @@ export function ExpensesPage({ currentUser, onNavigate }) {
       >
         {isLoading ? (
           <div className="exp-empty-state">
-            <p className="exp-empty-state__text">Loading expense records…</p>
+            <div className="exp-empty-state__spinner" />
+            <p className="exp-empty-state__text" style={{ margin: 0 }}>
+              Loading expense records…
+            </p>
           </div>
         ) : expenses.length === 0 ? (
           <div className="exp-empty-state">
+            <div className="exp-empty-state__icon">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path
+                  d="M4.25 3.5C4.25 2.94772 4.69772 2.5 5.25 2.5H14.75C15.3023 2.5 15.75 2.94772 15.75 3.5V17L13.45 15.55L11.15 17L8.85 15.55L6.55 17L4.25 15.55V3.5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7.25 7H12.75M7.25 10.25H11.25"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
             <h2 className="exp-empty-state__title">
               {hasActiveFilters
                 ? 'No matching expenses found'
@@ -643,7 +662,7 @@ export function ExpensesPage({ currentUser, onNavigate }) {
                 ? 'Try adjusting or clearing your filters to view other expense vouchers.'
                 : 'Record transportation, labour, installation, repair, or miscellaneous workshop expenses here.'}
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem' }}>
+            <div className="exp-empty-state__actions">
               {hasActiveFilters ? (
                 <button
                   type="button"
