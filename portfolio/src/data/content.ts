@@ -1,6 +1,6 @@
 export const company = {
  name: import.meta.env.VITE_COMPANY_NAME || 'Soft Touch Sofas',
- address: import.meta.env.VITE_COMPANY_ADDRESS || '', city: import.meta.env.VITE_COMPANY_CITY || '', state: import.meta.env.VITE_COMPANY_STATE || '', postal: import.meta.env.VITE_COMPANY_POSTAL_CODE || '', country: import.meta.env.VITE_COMPANY_COUNTRY || 'India', phone: import.meta.env.VITE_COMPANY_PHONE || '', email: import.meta.env.VITE_COMPANY_EMAIL || '', map: import.meta.env.VITE_COMPANY_MAP_EMBED_URL || '', directions: import.meta.env.VITE_COMPANY_MAPS_DIRECTIONS_URL || '',
+ address: import.meta.env.VITE_COMPANY_ADDRESS || '', city: import.meta.env.VITE_COMPANY_CITY || '', state: import.meta.env.VITE_COMPANY_STATE || 'Kerala', postal: import.meta.env.VITE_COMPANY_POSTAL_CODE || '682040', country: import.meta.env.VITE_COMPANY_COUNTRY || 'India', phone: import.meta.env.VITE_COMPANY_PHONE || '', email: import.meta.env.VITE_COMPANY_EMAIL || '', map: import.meta.env.VITE_COMPANY_MAP_EMBED_URL || 'https://maps.google.com/maps?q=9.925534%2C76.314219&z=14&output=embed', directions: import.meta.env.VITE_COMPANY_MAPS_DIRECTIONS_URL || 'https://www.google.com/maps/dir/?api=1&destination=9.925534%2C76.314219',
 };
 export const collections = [
  {slug:'sofas',name:'Sofas & seating',eyebrow:'01 / Upholstered living',description:'A considered range of upholstered seating, shaped around comfort, proportion and the character of a room.',tone:'clay',tag:'Core collection'},

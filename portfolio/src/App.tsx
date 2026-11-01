@@ -78,8 +78,9 @@ function SEO() {
   document.querySelector('meta[name="description"]')?.setAttribute('content', 'Discover Soft Touch Sofas: thoughtful furniture, considered craftsmanship and international business enquiries.');
   document.querySelector('link[rel="canonical"]')?.setAttribute('href', `${import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.com'}${location.pathname}`);
   document.getElementById('company-schema')?.remove();
-  const schema: Record<string, unknown> = { '@context': 'https://schema.org', '@type': company.address ? 'LocalBusiness' : 'Organization', name: company.name, url: import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.com' };
-  if (company.address) { schema.address = { '@type': 'PostalAddress', streetAddress: company.address, addressLocality: company.city || undefined, addressRegion: company.state || undefined, postalCode: company.postal || undefined, addressCountry: company.country }; if (company.phone) schema.telephone = company.phone; if (company.email) schema.email = company.email; }
+  const hasVerifiedLocation = Boolean(company.postal && company.state && company.country);
+  const schema: Record<string, unknown> = { '@context': 'https://schema.org', '@type': hasVerifiedLocation ? 'LocalBusiness' : 'Organization', name: company.name, url: import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.com' };
+  if (hasVerifiedLocation) { schema.address = { '@type': 'PostalAddress', streetAddress: company.address || undefined, addressLocality: company.city || undefined, addressRegion: company.state || undefined, postalCode: company.postal || undefined, addressCountry: company.country }; if (company.phone) schema.telephone = company.phone; if (company.email) schema.email = company.email; if (company.map) schema.hasMap = company.map; }
   const script = document.createElement('script'); script.id = 'company-schema'; script.type = 'application/ld+json'; script.text = JSON.stringify(schema); document.head.appendChild(script);
  }, [location]);
  return null;
