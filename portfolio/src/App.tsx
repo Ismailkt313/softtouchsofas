@@ -26,7 +26,8 @@ function Photo({ kind = 'living', alt, className = '', placeholder = false }: { 
 }
 function CTA({ to = '/contact', children = 'Start a conversation' }: { to?: string; children?: ReactNode }) { return <Link className="text-link" to={to}>{children}<span><ArrowUpRight size={16}/></span></Link>; }
 function PageHero({ kicker, title, copy, kind = 'living' }: { kicker: string; title: string; copy: string; kind?: PhotoKind }) {
-  return <section className="inner-hero"><Photo kind={kind} alt="Warm, considered furniture and interior styling" placeholder/><div className="inner-hero-shade"/><div className="inner-hero-copy"><Eyebrow>{kicker}</Eyebrow><h1>{title}</h1><p>{copy}</p></div><div className="inner-hero-index">SOFT TOUCH SOFAS <span/> {kicker.toUpperCase()}</div></section>;
+  const titleLines = title.split(String.fromCharCode(92) + 'n');
+  return <section className="inner-hero"><Photo kind={kind} alt="Warm, considered furniture and interior styling" placeholder/><div className="inner-hero-shade"/><div className="inner-hero-copy"><Eyebrow>{kicker}</Eyebrow><h1>{titleLines.map((line, index) => <span key={`${index}-${line}`}>{index > 0 && <br/>}{line}</span>)}</h1><p>{copy}</p></div><div className="inner-hero-index">SOFT TOUCH SOFAS <span/> {kicker.toUpperCase()}</div></section>;
 }
 function Location() {
   const address = [company.address, company.city, company.state, company.postal, company.country].filter(Boolean).join(', ');
