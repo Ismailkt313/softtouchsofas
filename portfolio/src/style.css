@@ -34,7 +34,7 @@
 .all-collections .mosaic-card:hover .photo img{transform:scale(1.025)}
 
 /* Home editorial slideshow */
-.home-hero{height:min(790px,88svh);min-height:600px;max-height:820px;isolation:isolate}
+.home-hero{height:100svh;min-height:min(600px,100svh);max-height:none;isolation:isolate}
 .hero-slides,.hero-slide{position:absolute;inset:0;width:100%;height:100%}
 .hero-slide{opacity:0;visibility:hidden;transition:opacity 1100ms cubic-bezier(.22,.61,.36,1);z-index:0}
 .hero-slide.is-active{opacity:1;visibility:visible;z-index:1}
@@ -79,7 +79,7 @@
 @keyframes ticker-right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @media(max-width:850px){.collection-mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}.home-hero .hero-copy{left:8%;right:8%}.collections-enquiry{padding-inline:7%;gap:28px}}
 @media(min-width:741px) and (max-width:850px){.collection-mosaic .mosaic-card:last-child{grid-column:1/-1;width:calc((100% - clamp(16px,2.2vw,30px))/2);justify-self:center}}
-@media(max-width:740px){.home-hero{height:78svh;min-height:590px;max-height:760px}.home-hero .hero-copy{left:7%;right:7%;top:45%;transform:translateY(-35%)}.home-hero .hero-copy h1{font-size:clamp(42px,10vw,60px);margin:16px 0}.home-hero .hero-copy>p{max-width:350px;font-size:13px}.home-hero .hero-actions{gap:9px;flex-wrap:wrap}.hero-controls{right:7%;bottom:23px;gap:9px}.hero-controls>button{width:34px;height:34px}.hero-indicators{gap:6px}.all-collections{padding:48px 7% 52px}.all-collections .section-heading{margin-bottom:22px}.collection-mosaic{grid-template-columns:minmax(0,1fr);gap:28px}.collection-mosaic .mosaic-card .photo{aspect-ratio:4/3}.collection-mosaic .mosaic-label{padding-top:13px}.collection-mosaic .mosaic-label h3{font-size:24px}.collection-mosaic .mosaic-label p{min-height:0}.collections-enquiry{grid-template-columns:1fr;margin:0 auto 48px;padding:0 7%;gap:18px}.collections-enquiry>.photo{aspect-ratio:16/10}.collections-enquiry-copy{padding:8px 0 0}.collections-enquiry-copy h2{font-size:36px;margin:13px 0}.collections-enquiry-copy>p{font-size:12px}.collections-enquiry-actions{margin-top:16px;gap:8px 16px}.specialization-ticker{height:58px}.ticker-track{animation-duration:34s}.ticker-group{gap:6px;padding:0 7px}.ticker-group>span{font-size:7px;letter-spacing:.07em}.ticker-group>i{width:3px;height:3px}}
+@media(max-width:740px){.home-hero{height:100svh;min-height:100svh;max-height:none}.home-hero .hero-copy{left:7%;right:7%;top:45%;transform:translateY(-35%)}.home-hero .hero-copy h1{font-size:clamp(42px,10vw,60px);margin:16px 0}.home-hero .hero-copy>p{max-width:350px;font-size:13px}.home-hero .hero-actions{gap:9px;flex-wrap:wrap}.hero-controls{right:7%;bottom:23px;gap:9px}.hero-controls>button{width:34px;height:34px}.hero-indicators{gap:6px}.all-collections{padding:48px 7% 52px}.all-collections .section-heading{margin-bottom:22px}.collection-mosaic{grid-template-columns:minmax(0,1fr);gap:28px}.collection-mosaic .mosaic-card .photo{aspect-ratio:4/3}.collection-mosaic .mosaic-label{padding-top:13px}.collection-mosaic .mosaic-label h3{font-size:24px}.collection-mosaic .mosaic-label p{min-height:0}.collections-enquiry{grid-template-columns:1fr;margin:0 auto 48px;padding:0 7%;gap:18px}.collections-enquiry>.photo{aspect-ratio:16/10}.collections-enquiry-copy{padding:8px 0 0}.collections-enquiry-copy h2{font-size:36px;margin:13px 0}.collections-enquiry-copy>p{font-size:12px}.collections-enquiry-actions{margin-top:16px;gap:8px 16px}.specialization-ticker{height:58px}.ticker-track{animation-duration:34s}.ticker-group{gap:6px;padding:0 7px}.ticker-group>span{font-size:7px;letter-spacing:.07em}.ticker-group>i{width:3px;height:3px}}
 @media(prefers-reduced-motion:reduce){.hero-slide,.hero-slide-photo img,.hero-enquire,.hero-controls>button{transition:none!important}.hero-slide-photo img{animation:none!important;transform:none!important}.ticker-track{animation:none!important;transform:none!important}.ticker-group[aria-hidden="true"]{display:none}}
 
 /* Keep the manufacturing page's wordmark and navigation readable over its light layout. */
@@ -99,3 +99,51 @@
 .manufacturing-whatsapp{display:inline-flex;min-height:44px;padding:6px 14px;background:var(--walnut);color:#fff}
 .manufacturing-whatsapp .text-link-icon{color:#fff}
 @media(max-width:740px){.header.header-light-page:not(.scrolled){background:var(--ivory);color:var(--walnut)}.manufacturing-copy h1{font-size:clamp(38px,9vw,48px);line-height:1.1}.manufacturing-copy>p{font-size:13px}.manufacturing-actions{gap:8px 14px;margin-top:18px}.manufacturing-gallery{align-items:stretch}}
+
+.making-brand-marquee{grid-column:1/-1;max-width:100%;overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;margin-top:2px;color:#89745e}
+.making-brand-track{display:flex;width:max-content;animation:making-brand-left 30s linear infinite;will-change:transform}
+.making-brand-group{display:flex;flex:0 0 max-content;align-items:center;gap:clamp(20px,3vw,44px);padding-right:clamp(20px,3vw,44px);white-space:nowrap}
+.making-brand-group span{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
+.making-brand-group i{font-size:12px;font-style:normal;color:var(--bronze)}
+.making-brand-marquee:hover .making-brand-track,.making-brand-marquee:focus-within .making-brand-track{animation-play-state:paused}
+@keyframes making-brand-left{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+@media(max-width:740px){.making-brand-marquee{margin-top:0;padding:11px 0}.making-brand-group{gap:18px;padding-right:18px}.making-brand-group span{font-size:8px;letter-spacing:.12em}}
+@media(prefers-reduced-motion:reduce){.making-brand-track{animation:none!important;transform:none!important}.making-brand-group[aria-hidden="true"]{display:none}}
+
+/* Small moving brand message bridges the home service photo and copy. */
+.making-band{position:relative}
+.making-brand-marquee{position:absolute;left:50%;top:50%;z-index:3;grid-column:auto;width:clamp(76px,9vw,118px);height:34px;margin:0;padding:0;transform:translate(-50%,-50%);display:flex;align-items:center;border:1px solid #d8d0c5;border-radius:18px;background:rgba(247,244,238,.94);box-shadow:0 4px 16px #30251e10}
+.making-brand-track{height:100%;align-items:center;animation-duration:24s}
+.making-brand-group{gap:17px;padding-right:17px}
+.making-brand-group span{font-size:7px;letter-spacing:.08em}
+@media(max-width:850px) and (min-width:741px){.making-brand-marquee{width:68px;height:30px}.making-brand-group{gap:14px;padding-right:14px}.making-brand-group span{font-size:6px;letter-spacing:.04em}}
+@media(max-width:740px){.making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;grid-column:1/-1;width:100%;height:42px;margin:8px 0 0;padding:10px 0;transform:none;border-radius:0;background:transparent;box-shadow:none;border-left:0;border-right:0}.making-brand-group{gap:18px;padding-right:18px}.making-brand-group span{font-size:8px;letter-spacing:.12em}}
+
+/* Keep the brand motion in its own full-width row, never over the photo or copy. */
+.making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;grid-column:1/-1;width:100%;height:58px;margin:14px 0 0;padding:0;transform:none;display:flex;align-items:center;overflow:hidden;border:0;border-top:1px solid #d8d0c5;border-bottom:1px solid #d8d0c5;border-radius:0;background:transparent;box-shadow:none}
+.making-brand-track{height:100%;align-items:center;animation-duration:26s}
+.making-brand-group{gap:clamp(26px,4vw,58px);padding-right:clamp(26px,4vw,58px)}
+.making-brand-group span{font-size:11px;letter-spacing:.16em}
+@media(max-width:850px) and (min-width:741px){.making-brand-marquee{width:100%;height:54px;margin-top:10px}.making-brand-group span{font-size:10px;letter-spacing:.12em}}
+@media(max-width:740px){.making-brand-marquee{position:relative;left:auto;top:auto;width:100%;height:48px;margin:10px 0 0;padding:0;transform:none;border-top:1px solid #d8d0c5;border-bottom:1px solid #d8d0c5}.making-brand-group{gap:22px;padding-right:22px}.making-brand-group span{font-size:9px;letter-spacing:.1em}}
+
+/* Full-bleed brand strip bridging the service section and walnut quality section. */
+.making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;display:flex;align-items:center;width:100%;height:66px;margin:0;padding:0;transform:none;overflow:hidden;border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;background:var(--ivory);box-shadow:none;color:var(--walnut)}
+.making-brand-track{height:100%;align-items:center;animation-duration:18s;animation-direction:normal}
+.making-brand-group{gap:clamp(28px,4vw,60px);padding-right:clamp(28px,4vw,60px)}
+.making-brand-group span{font-size:11px;letter-spacing:.16em;color:var(--walnut)}
+.making-brand-group i{color:var(--bronze)}
+@media(max-width:740px){.making-brand-marquee{height:54px;margin:0}.making-brand-group{gap:22px;padding-right:22px}.making-brand-group span{font-size:9px;letter-spacing:.1em}}
+
+/* On About, keep the motion with the brown values panel and put its links just after it. */
+.about-values{padding-bottom:0}
+.about-values .specialization-ticker-dark{position:relative;left:50%;width:100vw;margin:40px 0 0;transform:translateX(-50%);background:var(--walnut);color:var(--ivory);border-color:#ffffff36}
+.about-values .specialization-ticker-dark .ticker-group>span{color:var(--ivory)}
+.about-values .specialization-ticker-dark .ticker-group>i{background:#c5a788}
+@media(max-width:740px){.about-values{padding-bottom:0}.about-values .specialization-ticker-dark{height:58px;margin-top:30px}}
+
+/* Ensure page heroes reach the viewport edges without creating horizontal scroll. */
+html,body,#root{width:100%;max-width:100%;overflow-x:clip}
+.hero,.inner-hero{display:block;width:100%;max-width:none;margin-inline:0}
+.inner-hero-copy{width:min(680px,86%);right:max(7%,calc((100% - 1240px)/2))}
+.manufacturing-editorial{width:100%;max-width:none;margin:0;padding-left:max(7%,calc((100% - 1320px)/2));padding-right:max(7%,calc((100% - 1320px)/2))}
