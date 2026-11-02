@@ -128,9 +128,9 @@
 @media(max-width:740px){.making-brand-marquee{position:relative;left:auto;top:auto;width:100%;height:48px;margin:10px 0 0;padding:0;transform:none;border-top:1px solid #d8d0c5;border-bottom:1px solid #d8d0c5}.making-brand-group{gap:22px;padding-right:22px}.making-brand-group span{font-size:9px;letter-spacing:.1em}}
 
 /* Full-bleed brand strip bridging the service section and walnut quality section. */
-.making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;display:flex;align-items:center;width:100%;height:66px;margin:0;padding:0;transform:none;overflow:hidden;border:0;border-top:1px solid #b3977a70;border-bottom:1px solid #b3977a70;border-radius:0;background:var(--walnut);box-shadow:none;color:var(--ivory)}
+.making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;display:flex;align-items:center;width:100%;height:66px;margin:0;padding:0;transform:none;overflow:hidden;border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;background:var(--ivory);box-shadow:none;color:var(--walnut)}
 .making-brand-track{height:100%;align-items:center;animation-duration:26s}
 .making-brand-group{gap:clamp(28px,4vw,60px);padding-right:clamp(28px,4vw,60px)}
-.making-brand-group span{font-size:11px;letter-spacing:.16em;color:var(--ivory)}
-.making-brand-group i{color:#c5a788}
+.making-brand-group span{font-size:11px;letter-spacing:.16em;color:var(--walnut)}
+.making-brand-group i{color:var(--bronze)}
 @media(max-width:740px){.making-brand-marquee{height:54px;margin:0}.making-brand-group{gap:22px;padding-right:22px}.making-brand-group span{font-size:9px;letter-spacing:.1em}}
