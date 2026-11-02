@@ -45,10 +45,7 @@ function Footer() {
 }
 function HeroSlideshow() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const paused = hovered || focused;
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -57,13 +54,13 @@ function HeroSlideshow() {
     return () => media.removeEventListener('change', update);
   }, []);
   useEffect(() => {
-    if (paused || reducedMotion) return;
+    if (reducedMotion) return;
     const timer = window.setInterval(() => setActiveSlide((slide) => (slide + 1) % heroSlides.length), 3000);
     return () => window.clearInterval(timer);
-  }, [paused, reducedMotion]);
+  }, [activeSlide, reducedMotion]);
 
   const move = (direction: number) => setActiveSlide((slide) => (slide + direction + heroSlides.length) % heroSlides.length);
-  return <section className="hero home-hero" aria-label="Soft Touch Sofas featured furniture" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
+  return <section className="hero home-hero" aria-label="Soft Touch Sofas featured furniture">
     <div className="hero-slides" aria-live="off">{heroSlides.map((kind, index) => <div className={`hero-slide ${index === activeSlide ? 'is-active' : ''}`} key={kind} aria-hidden={index !== activeSlide}><Photo kind={kind} className="hero-slide-photo" alt={imageManifest[kind].alt}/></div>)}</div>
     <div className="hero-gradient"/>
     <div className="hero-copy"><Eyebrow>Soft Touch Sofas</Eyebrow><h1>Sofas, Curtains <i>&amp; Upholstery</i></h1><p>Beautiful furniture and soft furnishings for your home.</p><div className="hero-actions"><a className="hero-enquire" href={company.whatsapp}>Enquire <ArrowUpRight size={16}/></a><CTA to="/collections">Explore collections</CTA></div></div>
