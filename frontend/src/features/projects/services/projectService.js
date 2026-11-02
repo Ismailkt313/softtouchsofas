@@ -143,6 +143,7 @@ category: PROJECT_CATEGORY_OPTIONS.includes(raw.category)
       ? raw.status
       : 'In Progress',
     description: typeof raw.description === 'string' ? raw.description : '',
+    materialsUsed: Array.isArray(raw.materialsUsed) ? raw.materialsUsed : [],
     contractValue: Number.isFinite(Number(raw.contractValue))
       ? Number(raw.contractValue)
       : 0,
@@ -483,7 +484,7 @@ export async function updateProject(identifier, input) {
   }
 }
 
-export async function updateProjectStatus(identifier, status) {
+export async function updateProjectStatus(identifier, status, options = {}) {
   if (!identifier || !String(identifier).trim()) {
     throw new Error('A valid project identifier is required for status updates.')
   }
@@ -498,7 +499,7 @@ export async function updateProjectStatus(identifier, status) {
   try {
     const response = await api.patch(
       `/api/projects/${encodeURIComponent(String(identifier).trim())}/status`,
-      { status: normalizedStatus },
+      { status: normalizedStatus, ...(options.materialsUsed !== undefined ? { materialsUsed: options.materialsUsed } : {}) },
     )
     return normalizeProject(response.data?.project || response.data)
   } catch (error) {

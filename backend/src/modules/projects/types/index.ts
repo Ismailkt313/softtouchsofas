@@ -114,6 +114,7 @@ export interface ProjectResponseDto {
   category: ProjectCategory;
   status: ProjectStatus;
   description: string;
+  materialsUsed: Array<{ materialId: string; materialName: string; unit: string; quantity: number; notes?: string }>;
   contractValue: number;
   totalPurchases: number;
   totalOtherExpenses: number;

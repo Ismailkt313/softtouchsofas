@@ -12,6 +12,7 @@ import {
 } from '../dto/list-projects.dto';
 import { validateUpdateProjectDto } from '../dto/update-project.dto';
 import { validateUpdateProjectStatusDto } from '../dto/update-status.dto';
+import { ProjectMaterialConsumptionService, MaterialConsumptionError } from '../service/material-consumption.service';
 import {
   IProjectController,
   IProjectService,
@@ -47,6 +48,7 @@ function redactProjectForCaller(
     category: project.category,
     status: project.status,
     description: project.description,
+    materialsUsed: project.materialsUsed,
     contractValue: null,
     totalPurchases: null,
     totalOtherExpenses: null,
@@ -75,6 +77,7 @@ function respondProjectAccessDenied(res: Response): void {
 }
 
 export class ProjectController implements IProjectController {
+  private readonly materialConsumption = new ProjectMaterialConsumptionService();
   constructor(private projectService: IProjectService) {}
 
   list = async (
@@ -427,10 +430,23 @@ export class ProjectController implements IProjectController {
         return;
       }
 
-      const project = await this.projectService.updateProjectStatus(
-        id,
-        validation.value.status,
-      );
+      let project: ProjectResponseDto;
+      if (validation.value.status === 'Completed') {
+        const materialsUsed = (req.body as Record<string, unknown>)?.materialsUsed;
+        const rawLines = materialsUsed === undefined ? [] : materialsUsed;
+        if (!Array.isArray(rawLines)) {
+          res.status(400).json({ error: 'Bad Request', message: 'Materials used must be an array.' });
+          return;
+        }
+        await this.materialConsumption.complete(
+          id,
+          rawLines as Array<{ materialId: string; quantity: number; notes?: string }>,
+          req.user?.email || req.user?.id || 'unknown',
+        );
+        project = await this.projectService.getProjectByIdOrCode(id);
+      } else {
+        project = await this.projectService.updateProjectStatus(id, validation.value.status);
+      }
 
       await activityService.recordSafe({
         actionType: 'project.status_changed',
@@ -456,6 +472,10 @@ export class ProjectController implements IProjectController {
         project: redactProjectForCaller(project, canViewProfitability),
       });
     } catch (error: unknown) {
+      if (error instanceof MaterialConsumptionError) {
+        res.status(error.statusCode).json({ error: error.statusCode === 409 ? 'Conflict' : 'Bad Request', message: error.message });
+        return;
+      }
       if (error instanceof ProjectNotFoundError) {
         res.status(404).json({
           error: 'Not Found',

@@ -1,0 +1,5 @@
+# Project material consumption and valuation
+
+Completing a project records the actual material quantities used and writes immutable stock movements. The stock balance is reduced, but consumption is **not added as another project expense** in project summaries or reports. The existing project cost model uses posted, project-assigned purchase vouchers and other-expense vouchers. It does not maintain a reliable per-material cost layer (for example, FIFO/weighted average valuation or a verified cost at consumption time). Charging consumption again would double-count material already represented by purchase vouchers. Until a dependable valuation basis exists, project profitability therefore remains voucher-based and the material-consumption record is operational/audit data only.
+
+Stock movement history combines the existing purchase stock-movement records with immutable project-consumption and manual-adjustment records. Project use is recorded only through project completion; stock adjustments are reserved for physical-count corrections, damaged material, supplier returns, corrections, or other non-project reasons.

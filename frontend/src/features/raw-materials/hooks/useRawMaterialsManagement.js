@@ -26,6 +26,7 @@ const RAW_MATERIALS_LISTING_SCHEMA = {
 export function useRawMaterialsManagement({ currentUser }) {
   const canCreateMaterial = hasPermission(currentUser, 'materials.create')
   const canEditMaterial = hasPermission(currentUser, 'materials.edit')
+  const canManageStock = hasPermission(currentUser, 'materials.manageStock')
   const adminAccess = canEditMaterial
   const initialHasToken = hasActiveAuthToken()
 
@@ -661,6 +662,7 @@ export function useRawMaterialsManagement({ currentUser }) {
     adminAccess,
     canCreateMaterial,
     canEditMaterial,
+    canManageStock,
     materials,
     totalMaterials,
     totalPages,

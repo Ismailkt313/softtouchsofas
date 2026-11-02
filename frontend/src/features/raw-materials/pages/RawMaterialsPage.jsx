@@ -14,6 +14,7 @@ export function RawMaterialsPage({ currentUser, onNavigate }) {
   const {
     adminAccess,
     canCreateMaterial,
+    canManageStock,
     materials,
     totalMaterials,
     totalPages,
@@ -332,6 +333,7 @@ export function RawMaterialsPage({ currentUser, onNavigate }) {
         isLoading={detailsModalState.isLoading}
         error={detailsModalState.error}
         adminAccess={adminAccess}
+        canManageStock={canManageStock}
         onClose={closeDetailsModal}
         onRetry={() => {
           if (detailsModalState.materialId) {
