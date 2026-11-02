@@ -21,7 +21,7 @@ See `.env.example` for the company identity, address, phone and site URL. Separa
 
 The Contact page intentionally has no email enquiry form because no public business email was supplied. It directs visitors to the configured WhatsApp, phone, Instagram and postal address. Add an enquiry form only if a public email and secure submission destination are provided.
 
-Product, project and company copy is maintained in `src/data/content.ts` and `src/App.tsx`. All images in `public/*.jpg` are generated illustrative placeholders, not actual company products, facilities, staff or completed customer projects. Their section-specific source, alt text and caveat are maintained in `src/data/content.ts` (`imageManifest`). Replace them with approved company photography before launch; no image should be described as a verified Soft Touch Sofas process or installation.
+Product, project and company copy is maintained in `src/data/content.ts` and `src/App.tsx`. Images in `public/*.jpg` are illustrative and are not verified company products, facilities, staff or completed projects. Their source and descriptive alt text are listed in `src/data/content.ts` (`imageManifest`). Replace them with approved company photography before launch, and do not describe any image as a verified Soft Touch Sofas product or installation.
 
 ## Before publication
 
