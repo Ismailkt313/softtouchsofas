@@ -385,7 +385,7 @@ export function useProjectsList({ currentUser }) {
   }, [])
 
   const handleStatusSubmit = useCallback(
-    async (projectIdentifier, nextStatus) => {
+    async (projectIdentifier, nextStatus, options) => {
       const normalizedTarget = String(projectIdentifier || '').trim()
       if (!normalizedTarget) {
         return null
@@ -401,7 +401,7 @@ export function useProjectsList({ currentUser }) {
 
       setUpdatingStatusKey(normalizedTarget)
       try {
-        const updated = await updateProjectStatus(normalizedTarget, nextStatus)
+        const updated = await updateProjectStatus(normalizedTarget, nextStatus, options)
         const targetCode = (updated.projectId || normalizedTarget).trim()
         const targetId = updated.id || normalizedTarget
 

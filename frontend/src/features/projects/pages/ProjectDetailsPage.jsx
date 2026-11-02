@@ -613,6 +613,12 @@ export function ProjectDetailsPage({
             </h2>
           </div>
 
+          <div className="project-materials-used">
+            <h3>Materials Used</h3>
+            {(project.materialsUsed || []).length ? (
+              <ul>{project.materialsUsed.map((line, index) => <li key={`${line.materialId}-${index}`}><span>{line.materialName}</span><strong>{line.quantity} {line.unit}</strong>{line.notes ? <small>{line.notes}</small> : null}</li>)}</ul>
+            ) : <p>No materials have been recorded for this project.</p>}
+          </div>
           <dl className="project-specs-list">
             <div className="project-specs-list__item">
               <dt>Project ID</dt>

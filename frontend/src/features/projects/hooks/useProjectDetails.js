@@ -243,10 +243,10 @@ export function useProjectDetails({ projectIdentifier, currentUser }) {
   )
 
   const handleStatusSubmit = useCallback(
-    async (targetIdentifier, nextStatus) => {
+    async (targetIdentifier, nextStatus, options) => {
       setIsUpdatingStatus(true)
       try {
-        const updated = await updateProjectStatus(targetIdentifier, nextStatus)
+        const updated = await updateProjectStatus(targetIdentifier, nextStatus, options)
         setProject((prev) =>
           prev ? { ...prev, status: updated.status } : updated,
         )

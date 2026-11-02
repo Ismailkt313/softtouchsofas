@@ -60,6 +60,8 @@ export interface IProject {
   lastActivityAt: Date;
   lastActivityType: ProjectActivityEventType;
   inactivityWarningState: IProjectInactivityWarningState;
+  materialsUsed?: Array<{ materialId: string; materialName: string; unit: string; quantity: number; notes?: string }>;
+  materialsConsumptionRecorded?: boolean;
   createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -193,6 +195,11 @@ const ProjectSchema = new Schema<IProject>(
       required: true,
       default: 'project_created',
     },
+    materialsUsed: {
+      type: [{ materialId: { type: String, required: true }, materialName: { type: String, required: true }, unit: { type: String, required: true }, quantity: { type: Number, required: true, min: 0 }, notes: { type: String, default: '' } }],
+      default: [],
+    },
+    materialsConsumptionRecorded: { type: Boolean, default: false },
     inactivityWarningState: {
       activeWarningId: {
         type: String,

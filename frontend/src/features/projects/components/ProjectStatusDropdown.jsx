@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PROJECT_STATUS_OPTIONS } from '../services/projectService'
+import { fetchRawMaterials } from '../../raw-materials/services/rawMaterialService'
 
 const DROPDOWN_WIDTH = 188
 const VIEWPORT_MARGIN = 10
@@ -61,6 +62,12 @@ export function ProjectStatusDropdown({
   const [isOpen, setIsOpen] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
   const [pendingLocal, setPendingLocal] = useState(false)
+  const [completionOpen, setCompletionOpen] = useState(false)
+  const [materials, setMaterials] = useState([])
+  const [completionLines, setCompletionLines] = useState([{ materialId: '', quantity: '', notes: '' }])
+  const [completionError, setCompletionError] = useState('')
+  const [emptyConfirmed, setEmptyConfirmed] = useState(false)
+  const [loadingMaterials, setLoadingMaterials] = useState(false)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
   const listboxId = useId()
@@ -146,14 +153,20 @@ export function ProjectStatusDropdown({
       return
     }
 
-    setPendingLocal(true)
-    try {
-      await onStatusChange(targetKey, nextStatus)
-    } catch {
+    if (nextStatus === 'Completed') {
+      setCompletionOpen(true)
+      setCompletionError('')
+      setLoadingMaterials(true)
+      try {
+        const result = await fetchRawMaterials({ page: 1, limit: 100, status: 'active', isAdmin: true })
+        setMaterials(result.materials || [])
+      } catch (error) {
+        setCompletionError(error instanceof Error ? error.message : 'Unable to load active materials.')
+      } finally { setLoadingMaterials(false) }
       return
-    } finally {
-      setPendingLocal(false)
     }
+    setPendingLocal(true)
+    try { await onStatusChange(targetKey, nextStatus) } catch { return } finally { setPendingLocal(false) }
   }
 
   if (typeof onStatusChange !== 'function') {
@@ -167,7 +180,29 @@ export function ProjectStatusDropdown({
     )
   }
 
+  const updateCompletionLine = (index, field, value) => setCompletionLines(rows => rows.map((row, i) => i === index ? { ...row, [field]: value } : row))
+  const confirmCompletion = async () => {
+    setCompletionError('')
+    const selected = completionLines.filter(row => row.materialId || String(row.quantity).trim())
+    if (!selected.length && !emptyConfirmed) { setCompletionError('Confirm explicitly that no materials were used.'); return }
+    const seen = new Set()
+    for (let i = 0; i < selected.length; i += 1) {
+      const row = selected[i]; const quantity = Number(row.quantity); const material = materials.find(item => item.id === row.materialId)
+      if (!material) { setCompletionError(`Line ${i + 1}: select a material.`); return }
+      if (!Number.isFinite(quantity) || quantity <= 0) { setCompletionError(`Line ${i + 1}: quantity must be greater than zero.`); return }
+      if (seen.has(row.materialId)) { setCompletionError('Each material can appear only once.'); return }
+      seen.add(row.materialId)
+      if (quantity > Number(material.quantityOnHand || 0)) { setCompletionError(`Insufficient stock for ${material.name}. Available ${material.quantityOnHand} ${material.unit}.`); return }
+    }
+    setPendingLocal(true)
+    try {
+      await onStatusChange(targetKey, 'Completed', { materialsUsed: selected.map(row => ({ materialId: row.materialId, quantity: Number(row.quantity), notes: row.notes.trim() })) })
+      setCompletionOpen(false); setCompletionLines([{ materialId: '', quantity: '', notes: '' }]); setEmptyConfirmed(false)
+    } catch (error) { setCompletionError(error instanceof Error ? error.message : 'Unable to complete project.') } finally { setPendingLocal(false) }
+  }
+
   return (
+    <>
     <div className="project-status-dropdown">
       <button
         ref={triggerRef}
@@ -272,5 +307,27 @@ export function ProjectStatusDropdown({
           )
         : null}
     </div>
+    {completionOpen && typeof document !== 'undefined' ? createPortal(
+      <div className="project-completion-overlay" role="presentation">
+        <section className="project-completion-modal" role="dialog" aria-modal="true" aria-labelledby="project-completion-title">
+          <header><h2 id="project-completion-title">Complete {project?.projectId || 'project'}</h2><p>Record materials actually used. Stock will be reduced only after confirmation.</p></header>
+          {loadingMaterials ? <p role="status">Loading active materials…</p> : null}
+          {completionLines.map((line, index) => {
+            const selected = materials.find(item => item.id === line.materialId)
+            return <div className="project-completion-line" key={index}>
+              <label>Material<select value={line.materialId} onChange={event => updateCompletionLine(index, 'materialId', event.target.value)}><option value="">Select material</option>{materials.map(item => <option key={item.id} value={item.id}>{item.name} — {item.quantityOnHand} {item.unit} available</option>)}</select></label>
+              <label>Used ({selected?.unit || 'unit'})<input type="number" min="0.001" step="0.001" value={line.quantity} onChange={event => updateCompletionLine(index, 'quantity', event.target.value)} placeholder="0" /></label>
+              <label>Note (optional)<input value={line.notes} maxLength={500} onChange={event => updateCompletionLine(index, 'notes', event.target.value)} placeholder="Optional note" /></label>
+              <button type="button" className="admin-btn admin-btn--secondary" onClick={() => setCompletionLines(rows => rows.filter((_, i) => i !== index))} aria-label={`Remove material line ${index + 1}`}>Remove</button>
+              {selected ? <small>Available: {selected.quantityOnHand} {selected.unit}</small> : null}
+            </div>
+          })}
+          <button type="button" className="admin-btn admin-btn--secondary" onClick={() => setCompletionLines(rows => [...rows, { materialId: '', quantity: '', notes: '' }])}>Add material</button>
+          <label className="project-completion-empty"><input type="checkbox" checked={emptyConfirmed} onChange={event => setEmptyConfirmed(event.target.checked)} /> No materials were used on this project</label>
+          {completionError ? <p className="project-completion-error" role="alert">{completionError}</p> : null}
+          <footer><button type="button" className="admin-btn admin-btn--secondary" disabled={busy} onClick={() => { setCompletionOpen(false); setCompletionError('') }}>Cancel</button><button type="button" className="admin-btn admin-btn--primary" disabled={busy || loadingMaterials} onClick={confirmCompletion}>{busy ? 'Saving…' : 'Confirm completion'}</button></footer>
+        </section>
+      </div>, document.body) : null}
+    </>
   )
 }

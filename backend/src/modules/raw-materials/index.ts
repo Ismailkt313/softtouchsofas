@@ -4,6 +4,7 @@ import {
   verifyToken,
 } from '../../middleware/auth';
 import { RawMaterialsController } from './controller/raw-materials.controller';
+import { adjustStock, listMovements } from './controller/stock-movement.controller';
 import { RawMaterialsRepository } from './repository/raw-materials.repository';
 import { RawMaterialsService } from './service/raw-materials.service';
 
@@ -24,6 +25,8 @@ router.get(
   requirePermission('materials.view'),
   rawMaterialsController.list,
 );
+router.post('/:id/adjustment', requirePermission('materials.manageStock'), adjustStock);
+router.get('/:id/movements', requirePermission('materials.view'), listMovements);
 router.get(
   '/:id',
   requirePermission('materials.view'),
@@ -39,11 +42,7 @@ router.patch(
   requirePermission('materials.edit'),
   rawMaterialsController.updateStatus,
 );
-router.patch(
-  '/:id/stock',
-  requirePermission('materials.manageStock'),
-  rawMaterialsController.adjustStock,
-);
+router.patch('/:id/stock', requirePermission('materials.manageStock'), adjustStock);
 router.patch(
   '/:id',
   requirePermission('materials.edit'),
@@ -71,6 +70,7 @@ export {
 export { RawMaterialsController };
 
 export * from './models/raw-material.model';
+export * from './models/stock-movement.model';
 export * from './types';
 export * from './dto/create-raw-material.dto';
 export * from './dto/update-raw-material.dto';

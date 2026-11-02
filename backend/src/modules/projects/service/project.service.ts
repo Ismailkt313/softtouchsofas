@@ -77,6 +77,7 @@ function mapProjectResponse(project: IProject): ProjectResponseDto {
     category: project.category,
     status: project.status,
     description: project.description || '',
+    materialsUsed: (project.materialsUsed || []).map((line) => ({ ...line })),
     contractValue: metrics.contractValue,
     totalPurchases: metrics.totalPurchases,
     totalOtherExpenses: metrics.totalOtherExpenses,

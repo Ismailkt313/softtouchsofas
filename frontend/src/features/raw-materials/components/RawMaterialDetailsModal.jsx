@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { fetchStockMovements, submitStockAdjustment } from '../services/stockMovementService'
 import {
   formatMaterialDateTime,
   formatMaterialQuantityOnHand,
@@ -16,6 +17,7 @@ export function RawMaterialDetailsModal({
   isLoading = false,
   error = '',
   adminAccess = false,
+  canManageStock = false,
   onClose,
   onRetry,
   onEdit,
@@ -24,6 +26,15 @@ export function RawMaterialDetailsModal({
   const closeBtnRef = useRef(null)
   const backdropMouseDownRef = useRef(false)
   const titleId = useId()
+  const [movementPage, setMovementPage] = useState(1)
+  const [movementType, setMovementType] = useState('')
+  const [movementFrom, setMovementFrom] = useState('')
+  const [movementTo, setMovementTo] = useState('')
+  const [movementTotalPages, setMovementTotalPages] = useState(1)
+  const [movements, setMovements] = useState([])
+  const [adjustment, setAdjustment] = useState({ direction: 'increase', quantity: '', reason: 'physical_count', notes: '' })
+  const [movementError, setMovementError] = useState('')
+  const [savingAdjustment, setSavingAdjustment] = useState(false)
 
   useEffect(() => {
     if (!isOpen || typeof document === 'undefined') {
@@ -50,6 +61,29 @@ export function RawMaterialDetailsModal({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen || !material?.id) return
+    let cancelled = false
+    fetchStockMovements(material.id, { page: movementPage, limit: 10, type: movementType, from: movementFrom, to: movementTo })
+      .then(result => { if (!cancelled) { setMovements(result.items || []); setMovementTotalPages(result.totalPages || 1) } })
+      .catch(error => { if (!cancelled) setMovementError(error instanceof Error ? error.message : 'Unable to load stock history.') })
+    return () => { cancelled = true }
+  }, [isOpen, material?.id, movementPage, movementType, movementFrom, movementTo])
+
+  const saveAdjustment = async () => {
+    setMovementError('')
+    const quantity = Number(adjustment.quantity)
+    if (!Number.isFinite(quantity) || quantity <= 0) { setMovementError('Enter a positive adjustment quantity.'); return }
+    setSavingAdjustment(true)
+    try {
+      await submitStockAdjustment(material.id, { ...adjustment, quantity })
+      setAdjustment(current => ({ ...current, quantity: '', notes: '' }))
+      setMovementPage(1)
+      onRetry?.()
+    } catch (error) { setMovementError(error instanceof Error ? error.message : 'Unable to adjust stock.') }
+    finally { setSavingAdjustment(false) }
+  }
 
   if (!isOpen) {
     return null
@@ -200,6 +234,8 @@ export function RawMaterialDetailsModal({
                   {material.description || 'No description provided.'}
                 </p>
               </div>
+              {canManageStock ? <section className="rm-stock-adjustment"><h3>Adjust Stock</h3><div className="rm-stock-adjustment__form"><select value={adjustment.direction} onChange={event => setAdjustment(current => ({ ...current, direction: event.target.value }))}><option value="increase">Increase stock</option><option value="decrease">Decrease stock</option></select><input type="number" min="0.001" step="0.001" placeholder={`Quantity (${material.unit})`} value={adjustment.quantity} onChange={event => setAdjustment(current => ({ ...current, quantity: event.target.value }))} /><select value={adjustment.reason} onChange={event => setAdjustment(current => ({ ...current, reason: event.target.value }))}><option value="physical_count">Physical count correction</option><option value="damaged_material">Damaged material</option><option value="supplier_return">Supplier return</option><option value="correction">Inventory correction</option><option value="other">Other</option></select><input maxLength={1000} placeholder="Optional notes" value={adjustment.notes} onChange={event => setAdjustment(current => ({ ...current, notes: event.target.value }))} /><button type="button" className="admin-btn admin-btn--primary" disabled={savingAdjustment} onClick={saveAdjustment}>{savingAdjustment ? 'Saving…' : 'Record adjustment'}</button></div></section> : null}
+              <section className="rm-stock-history"><div className="rm-stock-history__heading"><h3>Stock Movement History</h3><div className="rm-stock-history__filters"><select aria-label="Filter movement type" value={movementType} onChange={event => { setMovementType(event.target.value); setMovementPage(1) }}><option value="">All movement types</option><option value="purchase_created">Purchase posted</option><option value="purchase_revised">Purchase revised</option><option value="purchase_cancelled">Purchase cancelled</option><option value="project_consumption">Project consumption</option><option value="stock_adjustment_increase">Adjustment increase</option><option value="stock_adjustment_decrease">Adjustment decrease</option></select><input aria-label="Movement from date" type="date" value={movementFrom} onChange={event => { setMovementFrom(event.target.value); setMovementPage(1) }} /><input aria-label="Movement to date" type="date" value={movementTo} onChange={event => { setMovementTo(event.target.value); setMovementPage(1) }} /></div></div>{movementError ? <p role="alert">{movementError}</p> : null}{movements.length ? <div className="rm-stock-history__list">{movements.map(item => <article key={item.id}><div><strong>{String(item.movementType).replaceAll('_', ' ')}</strong><small>{formatMaterialDateTime(item.createdAt)} · {item.performedBy}</small><small>{item.reason}{item.projectId ? ` · ${item.projectId}` : ''}{item.voucherNumber ? ` · ${item.voucherNumber}` : ''}</small>{item.notes ? <small>{item.notes}</small> : null}</div><span>{item.previousQuantity} → {item.newQuantity} {material.unit}</span></article>)}</div> : <p>No stock movements recorded.</p>}<div className="rm-stock-history__pagination"><button type="button" className="admin-btn admin-btn--secondary" disabled={movementPage <= 1} onClick={() => setMovementPage(page => Math.max(1, page - 1))}>Previous</button><span>Page {movementPage} of {movementTotalPages}</span><button type="button" className="admin-btn admin-btn--secondary" disabled={movementPage >= movementTotalPages} onClick={() => setMovementPage(page => page + 1)}>Next</button></div></section>
             </>
           ) : null}
         </div>
