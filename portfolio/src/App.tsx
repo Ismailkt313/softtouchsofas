@@ -58,7 +58,7 @@ function HeroSlideshow() {
   }, []);
   useEffect(() => {
     if (paused || reducedMotion) return;
-    const timer = window.setInterval(() => setActiveSlide((slide) => (slide + 1) % heroSlides.length), 5000);
+    const timer = window.setInterval(() => setActiveSlide((slide) => (slide + 1) % heroSlides.length), 3000);
     return () => window.clearInterval(timer);
   }, [paused, reducedMotion]);
 
