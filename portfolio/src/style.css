@@ -101,12 +101,12 @@
 @media(max-width:740px){.header.header-light-page:not(.scrolled){background:var(--ivory);color:var(--walnut)}.manufacturing-copy h1{font-size:clamp(38px,9vw,48px);line-height:1.1}.manufacturing-copy>p{font-size:13px}.manufacturing-actions{gap:8px 14px;margin-top:18px}.manufacturing-gallery{align-items:stretch}}
 
 .making-brand-marquee{grid-column:1/-1;max-width:100%;overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;margin-top:2px;color:#89745e}
-.making-brand-track{display:flex;width:max-content;animation:making-brand-right 30s linear infinite;will-change:transform}
+.making-brand-track{display:flex;width:max-content;animation:making-brand-left 30s linear infinite;will-change:transform}
 .making-brand-group{display:flex;flex:0 0 max-content;align-items:center;gap:clamp(20px,3vw,44px);padding-right:clamp(20px,3vw,44px);white-space:nowrap}
 .making-brand-group span{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 .making-brand-group i{font-size:12px;font-style:normal;color:var(--bronze)}
 .making-brand-marquee:hover .making-brand-track,.making-brand-marquee:focus-within .making-brand-track{animation-play-state:paused}
-@keyframes making-brand-right{from{transform:translate3d(-50%,0,0)}to{transform:translate3d(0,0,0)}}
+@keyframes making-brand-left{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
 @media(max-width:740px){.making-brand-marquee{margin-top:0;padding:11px 0}.making-brand-group{gap:18px;padding-right:18px}.making-brand-group span{font-size:8px;letter-spacing:.12em}}
 @media(prefers-reduced-motion:reduce){.making-brand-track{animation:none!important;transform:none!important}.making-brand-group[aria-hidden="true"]{display:none}}
 
