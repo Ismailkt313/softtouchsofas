@@ -105,7 +105,12 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), localOcrAssetsPlugin()],
     server: {
-      host: env.VITE_HOST === 'false' ? false : (env.VITE_HOST || true),
+      host:
+        env.VITE_HOST === 'true'
+          ? true
+          : env.VITE_HOST === 'false'
+            ? false
+            : (env.VITE_HOST || true),
       port: devPort,
       strictPort: true,
       allowedHosts: true,
