@@ -106,7 +106,7 @@
 .making-brand-group span{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
 .making-brand-group i{font-size:12px;font-style:normal;color:var(--bronze)}
 .making-brand-marquee:hover .making-brand-track,.making-brand-marquee:focus-within .making-brand-track{animation-play-state:paused}
-@keyframes making-brand-right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes making-brand-right{from{transform:translate3d(-50%,0,0)}to{transform:translate3d(0,0,0)}}
 @media(max-width:740px){.making-brand-marquee{margin-top:0;padding:11px 0}.making-brand-group{gap:18px;padding-right:18px}.making-brand-group span{font-size:8px;letter-spacing:.12em}}
 @media(prefers-reduced-motion:reduce){.making-brand-track{animation:none!important;transform:none!important}.making-brand-group[aria-hidden="true"]{display:none}}
 
@@ -129,7 +129,7 @@
 
 /* Full-bleed brand strip bridging the service section and walnut quality section. */
 .making-brand-marquee{position:relative;left:auto;top:auto;z-index:auto;display:flex;align-items:center;width:100%;height:66px;margin:0;padding:0;transform:none;overflow:hidden;border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;background:var(--ivory);box-shadow:none;color:var(--walnut)}
-.making-brand-track{height:100%;align-items:center;animation-duration:26s}
+.making-brand-track{height:100%;align-items:center;animation-duration:18s;animation-direction:normal}
 .making-brand-group{gap:clamp(28px,4vw,60px);padding-right:clamp(28px,4vw,60px)}
 .making-brand-group span{font-size:11px;letter-spacing:.16em;color:var(--walnut)}
 .making-brand-group i{color:var(--bronze)}
