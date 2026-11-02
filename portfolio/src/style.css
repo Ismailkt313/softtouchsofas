@@ -141,3 +141,8 @@
 .about-values .specialization-ticker-dark .ticker-group>span{color:var(--ivory)}
 .about-values .specialization-ticker-dark .ticker-group>i{background:#c5a788}
 @media(max-width:740px){.about-values{padding-bottom:0}.about-values .specialization-ticker-dark{height:58px;margin-top:30px}}
+
+/* Ensure every page hero/background reaches the viewport edges while content stays aligned. */
+.hero,.inner-hero{width:100%;max-width:none;margin-inline:0}
+.inner-hero-copy{width:min(680px,86%);right:max(7%,calc((100% - 1240px)/2))}
+.manufacturing-editorial{width:100%;max-width:none;margin:0;padding-left:max(7%,calc((100% - 1320px)/2));padding-right:max(7%,calc((100% - 1320px)/2))}
