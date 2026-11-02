@@ -17,12 +17,12 @@ Deploy the generated `portfolio/dist` directory to any static host with SPA hist
 
 ## Configuration
 
-See `.env.example` for the company identity, location, contact, map and site URL values. These are public frontend values, not secrets. Never place private API keys in `VITE_*` variables.
+See `.env.example` for the company identity, address, phone and site URL. Separate address lines are configured with `|` separators. Instagram/WhatsApp links and visual content are centralized in `src/data/content.ts`. No map is embedded. These are public frontend values, not secrets. Never place private API keys in `VITE_*` variables.
 
 The contact form is intentionally an integration point only: it validates in the browser and clearly reports that it has not sent anything. Connect it to a secure backend or vetted form service before publishing it as a working enquiry channel.
 
-Product, project and company copy is maintained in `src/data/content.ts` and `src/App.tsx`. The editorial images in `public/editorial-*.jpg` are generated illustrative styling placeholders, not representations of actual company facilities, products or completed customer projects. They are referenced centrally in `src/App.tsx`; replace these assets and their alt text with approved company photography before launch.
+Product, project and company copy is maintained in `src/data/content.ts` and `src/App.tsx`. All images in `public/*.jpg` are generated illustrative placeholders, not actual company products, facilities, staff or completed customer projects. Their section-specific source, alt text and caveat are maintained in `src/data/content.ts` (`imageManifest`). Replace them with approved company photography before launch; no image should be described as a verified Soft Touch Sofas process or installation.
 
 ## Before publication
 
-Confirm legal company name and approved brand identity; address, city, state, postal code, country and accurate map embed/directions links; public business email and phone; canonical domain; approved company history, manufacturing details, product specifications and certifications; approved project names, locations, scope and photographs; genuine product/facility photography; enquiry delivery provider and privacy policy; sitemap domain; and any verified structured business data. No capacity, establishment date, export markets, certificates, customer names or location coordinates are invented.
+Before launch, replace generated illustrative photos with approved company product, workshop and project photography; confirm the public email; confirm the business address and contact details; set the canonical site domain; connect the contact form to secure enquiry delivery and publish a privacy notice; and add only verified company history, product specifications, manufacturing details and certificates. The address, phone, Instagram and WhatsApp are currently configured from the information supplied. No maps are embedded and no capacity, establishment date, export markets, certificates, clients or manufacturing standards are invented.
