@@ -134,3 +134,10 @@
 .making-brand-group span{font-size:11px;letter-spacing:.16em;color:var(--walnut)}
 .making-brand-group i{color:var(--bronze)}
 @media(max-width:740px){.making-brand-marquee{height:54px;margin:0}.making-brand-group{gap:22px;padding-right:22px}.making-brand-group span{font-size:9px;letter-spacing:.1em}}
+
+/* On About, keep the motion with the brown values panel and put its links just after it. */
+.about-values{padding-bottom:0}
+.about-values .specialization-ticker-dark{position:relative;left:50%;width:100vw;margin:40px 0 0;transform:translateX(-50%);background:var(--walnut);color:var(--ivory);border-color:#ffffff36}
+.about-values .specialization-ticker-dark .ticker-group>span{color:var(--ivory)}
+.about-values .specialization-ticker-dark .ticker-group>i{background:#c5a788}
+@media(max-width:740px){.about-values{padding-bottom:0}.about-values .specialization-ticker-dark{height:58px;margin-top:30px}}
