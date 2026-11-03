@@ -1,6 +1,9 @@
 import mongoose, { Model } from 'mongoose';
 import { isProjectAccessibleToCaller } from '../../permissions/constants/permissions.constants';
 import {
+  ACTIVITY_CAPPED_MAX_DOCUMENTS,
+  ACTIVITY_CAPPED_SIZE_BYTES,
+  ACTIVITY_RETENTION_MS,
   ActivityModel,
   IActivity,
   sharedActivityMemoryStore,
@@ -46,12 +49,39 @@ export class ActivityRepository {
       return;
     }
     if (!this.indexPromise) {
-      this.indexPromise = this.model
-        .createIndexes()
-        .then(() => undefined)
-        .catch(() => {
+      this.indexPromise = (async () => {
+        try {
+          const db = mongoose.connection.db;
+          if (db) {
+            const collName = this.model.collection.collectionName;
+            const collections = await db.listCollections({ name: collName }).toArray();
+            if (collections.length === 0) {
+              await db.createCollection(collName, {
+                capped: true,
+                size: ACTIVITY_CAPPED_SIZE_BYTES,
+                max: ACTIVITY_CAPPED_MAX_DOCUMENTS,
+              }).catch(() => null);
+            } else {
+              const isCapped = await this.model.collection.isCapped().catch(() => false);
+              if (!isCapped) {
+                await db.command({
+                  convertToCapped: collName,
+                  size: ACTIVITY_CAPPED_SIZE_BYTES,
+                  max: ACTIVITY_CAPPED_MAX_DOCUMENTS,
+                }).catch(() => null);
+              }
+            }
+            const indexes = await this.model.collection.indexes().catch(() => []);
+            const oldTsIdx = indexes.find((i: any) => i.name === 'timestamp_1');
+            if (oldTsIdx && !oldTsIdx.expireAfterSeconds) {
+              await this.model.collection.dropIndex('timestamp_1').catch(() => null);
+            }
+          }
+          await this.model.createIndexes();
+        } catch {
           this.indexPromise = null;
-        });
+        }
+      })();
     }
     await this.indexPromise;
   }
@@ -76,6 +106,19 @@ export class ActivityRepository {
       createdAt: ts,
     };
     this.memoryStore.set(generatedId, stored);
+
+    const twoMonthsAgoMs = Date.now() - ACTIVITY_RETENTION_MS;
+    for (const [key, item] of this.memoryStore.entries()) {
+      if (new Date(item.timestamp).getTime() < twoMonthsAgoMs) {
+        this.memoryStore.delete(key);
+      }
+    }
+    while (this.memoryStore.size > ACTIVITY_CAPPED_MAX_DOCUMENTS) {
+      const oldestKey = this.memoryStore.keys().next().value;
+      if (oldestKey) this.memoryStore.delete(oldestKey);
+      else break;
+    }
+
     return stored;
   }
 
@@ -86,13 +129,15 @@ export class ActivityRepository {
     assignedProjectIds?: string[] | null;
   }): Promise<IActivity[]> {
     const safeLimit = Math.min(50, Math.max(1, params.limit));
+    const twoMonthsAgo = new Date(Date.now() - ACTIVITY_RETENTION_MS);
 
     if (this.isDbConnected()) {
       const filter: Record<string, unknown> = params.includeAdminOnly
-        ? {}
+        ? { timestamp: { $gte: twoMonthsAgo } }
         : {
             visibility: 'all',
             entityType: { $nin: Array.from(ADMIN_ONLY_ENTITIES) },
+            timestamp: { $gte: twoMonthsAgo },
           };
 
       if (params.restrictToActorId) {
@@ -125,7 +170,10 @@ export class ActivityRepository {
       return mapped.slice(0, safeLimit);
     }
 
-    let items = Array.from(this.memoryStore.values());
+    const twoMonthsAgoMs = Date.now() - ACTIVITY_RETENTION_MS;
+    let items = Array.from(this.memoryStore.values()).filter(
+      (item) => new Date(item.timestamp).getTime() >= twoMonthsAgoMs,
+    );
     if (!params.includeAdminOnly) {
       items = items.filter(
         (item) =>
@@ -195,12 +243,15 @@ export class ActivityRepository {
         filter.actorId = query.actorId;
       }
 
-      if (query.fromDate || query.toDate) {
-        const range: Record<string, Date> = {};
-        if (query.fromDate) range.$gte = query.fromDate;
-        if (query.toDate) range.$lte = query.toDate;
-        filter.timestamp = range;
-      }
+      const twoMonthsAgo = new Date(Date.now() - ACTIVITY_RETENTION_MS);
+      const effectiveFromDate =
+        query.fromDate && query.fromDate.getTime() > twoMonthsAgo.getTime()
+          ? query.fromDate
+          : twoMonthsAgo;
+
+      const range: Record<string, Date> = { $gte: effectiveFromDate };
+      if (query.toDate) range.$lte = query.toDate;
+      filter.timestamp = range;
 
       const andClauses: Array<Record<string, unknown>> = [];
 
@@ -246,10 +297,11 @@ export class ActivityRepository {
       }
 
       const actorScopeFilter: Record<string, unknown> = includeAdminOnly
-        ? {}
+        ? { timestamp: { $gte: twoMonthsAgo } }
         : {
             visibility: 'all',
             entityType: { $nin: Array.from(ADMIN_ONLY_ENTITIES) },
+            timestamp: { $gte: twoMonthsAgo },
           };
       if (restrictToActorId) {
         actorScopeFilter.actorId = restrictToActorId;
@@ -303,7 +355,10 @@ export class ActivityRepository {
       };
     }
 
-    let scopedItems = Array.from(this.memoryStore.values());
+    const twoMonthsAgoMs = Date.now() - ACTIVITY_RETENTION_MS;
+    let scopedItems = Array.from(this.memoryStore.values()).filter(
+      (item) => new Date(item.timestamp).getTime() >= twoMonthsAgoMs,
+    );
     if (!includeAdminOnly) {
       scopedItems = scopedItems.filter(
         (item) =>
@@ -351,12 +406,13 @@ export class ActivityRepository {
       filtered = filtered.filter((item) => item.actorId === query.actorId);
     }
 
-    if (query.fromDate) {
-      const fromMs = query.fromDate.getTime();
-      filtered = filtered.filter(
-        (item) => new Date(item.timestamp).getTime() >= fromMs,
-      );
-    }
+    const effectiveFromMs =
+      query.fromDate && query.fromDate.getTime() > twoMonthsAgoMs
+        ? query.fromDate.getTime()
+        : twoMonthsAgoMs;
+    filtered = filtered.filter(
+      (item) => new Date(item.timestamp).getTime() >= effectiveFromMs,
+    );
 
     if (query.toDate) {
       const toMs = query.toDate.getTime();

@@ -42,7 +42,21 @@ export async function connectDB(): Promise<void> {
         mongoose.models.ProjectCounter,
         mongoose.models.ProjectCostAlert,
         mongoose.models.ProjectActivityWarning,
+        mongoose.models.Activity,
       ].filter(Boolean);
+
+      const db = mongoose.connection.db;
+      if (db) {
+        const coll = db.collection('activities');
+        const isCapped = await coll.isCapped().catch(() => false);
+        if (!isCapped) {
+          await db.command({
+            convertToCapped: 'activities',
+            size: 50 * 1024 * 1024,
+            max: 50000,
+          }).catch(() => null);
+        }
+      }
 
       await Promise.all(
         projectModels.map((model) => model.createIndexes().catch(() => null)),

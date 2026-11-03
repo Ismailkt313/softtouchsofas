@@ -27,6 +27,12 @@ export interface IActivity {
   createdAt?: Date;
 }
 
+export const ACTIVITY_RETENTION_DAYS = 60; // 2 months rolling backup/retention limit
+export const ACTIVITY_RETENTION_SECONDS = ACTIVITY_RETENTION_DAYS * 24 * 60 * 60; // 5,184,000 seconds
+export const ACTIVITY_RETENTION_MS = ACTIVITY_RETENTION_SECONDS * 1000;
+export const ACTIVITY_CAPPED_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+export const ACTIVITY_CAPPED_MAX_DOCUMENTS = 50000; // max 50,000 documents
+
 const ActivitySchema = new Schema<IActivity>(
   {
     actionType: {
@@ -107,11 +113,14 @@ const ActivitySchema = new Schema<IActivity>(
       type: Date,
       required: true,
       default: Date.now,
-      index: true,
     },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
+    capped: {
+      size: ACTIVITY_CAPPED_SIZE_BYTES,
+      max: ACTIVITY_CAPPED_MAX_DOCUMENTS,
+    },
   },
 );
 
@@ -121,6 +130,10 @@ ActivitySchema.index({ entityType: 1, timestamp: -1 });
 ActivitySchema.index({ actionType: 1, timestamp: -1 });
 ActivitySchema.index({ actorId: 1, timestamp: -1 });
 ActivitySchema.index({ projectRecordId: 1, timestamp: -1 });
+ActivitySchema.index(
+  { timestamp: 1 },
+  { expireAfterSeconds: ACTIVITY_RETENTION_SECONDS },
+);
 
 export const ActivityModel: Model<IActivity> =
   mongoose.models.Activity ||
