@@ -53,5 +53,27 @@ export async function connectDB(): Promise<void> {
   }
 }
 
+export function isMongoTransactionSupported(): boolean {
+  if (mongoose.connection.readyState !== 1) return false;
+  const topology = (mongoose.connection as any)?.client?.topology;
+  const description = topology?.description;
+  if (!description) return false;
+  const servers = [...(description.servers?.values() || [])];
+  if (servers.some((s: any) => s.type === 'Standalone')) return false;
+  return description.type === 'ReplicaSetWithPrimary' || description.type === 'Sharded';
+}
+
+export function isTransactionUnsupportedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { message?: string; code?: number; codeName?: string };
+  const msg = err.message || '';
+  return (
+    msg.includes('replica set member') ||
+    msg.includes('Transaction numbers are only allowed') ||
+    err.code === 20 ||
+    err.codeName === 'IllegalOperation'
+  );
+}
+
 export const connectDatabase = connectDB;
 export default connectDB;

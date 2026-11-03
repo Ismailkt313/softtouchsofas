@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { isMongoTransactionSupported, isTransactionUnsupportedError } from '../../../config/db';
 import { RawMaterialModel, sharedRawMaterialMemoryStore } from '../../raw-materials/models/raw-material.model';
 import { StockMovementModel, sharedStockMovementMemoryStore } from '../../raw-materials/models/stock-movement.model';
 import { ProjectModel, sharedProjectMemoryStore } from '../models/project.model';
@@ -25,12 +26,28 @@ export class ProjectMaterialConsumptionService {
   async complete(identifier: string, lines: ConsumptionLineInput[], actor: string) {
     const isDb = mongoose.connection.readyState === 1;
     if (isDb) {
-      const session = await mongoose.startSession();
-      try {
-        let result: any;
-        await session.withTransaction(async () => { result = await this.completeMongo(identifier, lines, actor, session); });
-        return result;
-      } finally { await session.endSession(); }
+      if (isMongoTransactionSupported()) {
+        try {
+          const session = await mongoose.startSession();
+          try {
+            let result: any;
+            await session.withTransaction(async () => {
+              result = await this.completeMongo(identifier, lines, actor, session);
+            });
+            return result;
+          } finally {
+            await session.endSession();
+          }
+        } catch (error) {
+          if (!isTransactionUnsupportedError(error)) {
+            throw error;
+          }
+          // Standalone MongoDB without replica set: continue to serialized non-transactional execution
+        }
+      }
+      return lock([`project:${identifier.toLowerCase()}`, ...lines.map(l => `material:${l.materialId}`)], async () => {
+        return await this.completeMongo(identifier, lines, actor);
+      });
     }
     const project = [...sharedProjectMemoryStore.values()].find(p => String(p._id) === identifier || p.projectId.toLowerCase() === identifier.toLowerCase());
     if (!project) throw new MaterialConsumptionError('Project not found.', 404);
@@ -75,34 +92,63 @@ export class ProjectMaterialConsumptionService {
     return aggregated;
   }
 
-  private async completeMongo(identifier: string, lines: ConsumptionLineInput[], actor: string, session: mongoose.ClientSession) {
+  private async completeMongo(identifier: string, lines: ConsumptionLineInput[], actor: string, session?: mongoose.ClientSession) {
     const projectFilter = mongoose.isValidObjectId(identifier)
       ? { $or: [{ _id: new mongoose.Types.ObjectId(identifier) }, { projectId: identifier.toUpperCase() }] }
       : { projectId: identifier.toUpperCase() };
-    const project = await ProjectModel.findOne(projectFilter).session(session);
+    const projectQuery = ProjectModel.findOne(projectFilter);
+    if (session) projectQuery.session(session);
+    const project = await projectQuery;
     if (!project) throw new MaterialConsumptionError('Project not found.', 404);
     if (project.status === 'Completed') return project.toObject();
     if ((project as any).materialsConsumptionRecorded) {
-      const reCompleted = await ProjectModel.findOneAndUpdate({ _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: true }, { $set: { status: 'Completed' } }, { new: true, session });
+      const reCompleted = await ProjectModel.findOneAndUpdate(
+        { _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: true },
+        { $set: { status: 'Completed' } },
+        { new: true, ...(session ? { session } : {}) }
+      );
       return (reCompleted || project).toObject();
     }
     const aggregated = this.validateLines(lines);
-    const docs = await RawMaterialModel.find({ _id: { $in: [...aggregated.keys()] }, isActive: true }).session(session);
+    const docsQuery = RawMaterialModel.find({ _id: { $in: [...aggregated.keys()] }, isActive: true });
+    if (session) docsQuery.session(session);
+    const docs = await docsQuery;
     if (docs.length !== aggregated.size) throw new MaterialConsumptionError('One or more selected materials are unavailable.', 400);
     const records: any[] = [];
     const used: any[] = [];
-    for (const material of docs) {
-      const id = String(material._id); const line = aggregated.get(id)!; const oldQty = Number(material.quantityOnHand || 0);
-      if (oldQty < line.quantity) throw new MaterialConsumptionError(`Insufficient stock for ${material.name}. Available ${oldQty} ${material.unit}; requested ${line.quantity}.`, 409);
-      const update = await RawMaterialModel.updateOne({ _id: material._id, quantityOnHand: { $gte: line.quantity } }, { $inc: { quantityOnHand: -line.quantity } }, { session });
-      if (update.modifiedCount !== 1) throw new MaterialConsumptionError(`Insufficient stock for ${material.name}; stock changed while completing this project.`, 409);
-      const newQty = round(oldQty - line.quantity); const now = new Date();
-      records.push({ idempotencyKey: `project:${project._id}:${id}`, materialId: id, materialName: material.name, unit: material.unit, movementType: 'project_consumption', quantity: line.quantity, previousQuantity: oldQty, newQuantity: newQty, reason: 'Project material consumption', notes: line.notes, projectId: project.projectId, projectRecordId: String(project._id), projectName: project.name, performedBy: actor, createdAt: now });
-      used.push({ materialId: id, materialName: material.name, unit: material.unit, quantity: line.quantity, notes: line.notes });
+    const rollbacks: Array<{ id: any; quantity: number }> = [];
+    try {
+      for (const material of docs) {
+        const id = String(material._id); const line = aggregated.get(id)!; const oldQty = Number(material.quantityOnHand || 0);
+        if (oldQty < line.quantity) throw new MaterialConsumptionError(`Insufficient stock for ${material.name}. Available ${oldQty} ${material.unit}; requested ${line.quantity}.`, 409);
+        const update = await RawMaterialModel.updateOne(
+          { _id: material._id, quantityOnHand: { $gte: line.quantity } },
+          { $inc: { quantityOnHand: -line.quantity } },
+          session ? { session } : {}
+        );
+        if (update.modifiedCount !== 1) throw new MaterialConsumptionError(`Insufficient stock for ${material.name}; stock changed while completing this project.`, 409);
+        rollbacks.push({ id: material._id, quantity: line.quantity });
+        const newQty = round(oldQty - line.quantity); const now = new Date();
+        records.push({ idempotencyKey: `project:${project._id}:${id}`, materialId: id, materialName: material.name, unit: material.unit, movementType: 'project_consumption', quantity: line.quantity, previousQuantity: oldQty, newQuantity: newQty, reason: 'Project material consumption', notes: line.notes, projectId: project.projectId, projectRecordId: String(project._id), projectName: project.name, performedBy: actor, createdAt: now });
+        used.push({ materialId: id, materialName: material.name, unit: material.unit, quantity: line.quantity, notes: line.notes });
+      }
+      if (records.length) {
+        await StockMovementModel.insertMany(records, session ? { session, ordered: true } : { ordered: true });
+      }
+      const updated = await ProjectModel.findOneAndUpdate(
+        { _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: { $ne: true } },
+        { $set: { status: 'Completed', materialsUsed: used, materialsConsumptionRecorded: true } },
+        { new: true, ...(session ? { session } : {}) }
+      );
+      if (!updated) throw new MaterialConsumptionError('Project was completed concurrently; no additional stock was deducted.', 409);
+      return updated.toObject();
+    } catch (err) {
+      if (!session && rollbacks.length) {
+        for (const rb of rollbacks) {
+          await RawMaterialModel.updateOne({ _id: rb.id }, { $inc: { quantityOnHand: rb.quantity } }).catch(() => undefined);
+        }
+      }
+      throw err;
     }
-    if (records.length) await StockMovementModel.insertMany(records, { session, ordered: true });
-    const updated = await ProjectModel.findOneAndUpdate({ _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: { $ne: true } }, { $set: { status: 'Completed', materialsUsed: used, materialsConsumptionRecorded: true } }, { new: true, session });
-    if (!updated) throw new MaterialConsumptionError('Project was completed concurrently; no additional stock was deducted.', 409);
-    return updated.toObject();
   }
 }

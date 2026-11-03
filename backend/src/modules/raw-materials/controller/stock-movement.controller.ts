@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { isMongoTransactionSupported, isTransactionUnsupportedError } from '../../../config/db';
 import { activityService } from '../../activity';
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../../../types/auth';
@@ -36,18 +37,35 @@ export async function adjustStock(req: AuthenticatedRequest, res: Response): Pro
     const result = await serialized(materialId, async () => {
       const delta = body.direction === 'increase' ? body.quantity : -body.quantity;
       if (mongoose.connection.readyState === 1) {
-        const session = await mongoose.startSession(); let material: any;
-        try { await session.withTransaction(async () => {
-          material = await RawMaterialModel.findById(materialId).session(session);
-          if (!material) throw new Error('NOT_FOUND');
-          const old = Number(material.quantityOnHand || 0); if (old + delta < 0) throw new Error(`INSUFFICIENT:${material.name}:${old}`);
-          const update = await RawMaterialModel.updateOne({ _id: materialId, quantityOnHand: old }, { $inc: { quantityOnHand: delta } }, { session });
-          if (update.modifiedCount !== 1) throw new Error('CONCURRENT_STOCK');
-          const movement: IStockMovement = { idempotencyKey: `adjustment:${new mongoose.Types.ObjectId().toHexString()}`, materialId, materialName: material.name, unit: material.unit, movementType: delta > 0 ? 'stock_adjustment_increase' : 'stock_adjustment_decrease', quantity: body.quantity, previousQuantity: old, newQuantity: old + delta, reason: body.reason, notes: body.notes?.trim() || '', performedBy: req.user?.email || req.user?.id || 'unknown', createdAt: new Date() };
-          await StockMovementModel.create([movement], { session });
-          material = { ...material.toObject(), quantityOnHand: old + delta };
-        }); } finally { await session.endSession(); }
-        return material;
+        if (isMongoTransactionSupported()) {
+          try {
+            const session = await mongoose.startSession(); let material: any;
+            try { await session.withTransaction(async () => {
+              material = await RawMaterialModel.findById(materialId).session(session);
+              if (!material) throw new Error('NOT_FOUND');
+              const old = Number(material.quantityOnHand || 0); if (old + delta < 0) throw new Error(`INSUFFICIENT:${material.name}:${old}`);
+              const update = await RawMaterialModel.updateOne({ _id: materialId, quantityOnHand: old }, { $inc: { quantityOnHand: delta } }, { session });
+              if (update.modifiedCount !== 1) throw new Error('CONCURRENT_STOCK');
+              const movement: IStockMovement = { idempotencyKey: `adjustment:${new mongoose.Types.ObjectId().toHexString()}`, materialId, materialName: material.name, unit: material.unit, movementType: delta > 0 ? 'stock_adjustment_increase' : 'stock_adjustment_decrease', quantity: body.quantity, previousQuantity: old, newQuantity: old + delta, reason: body.reason, notes: body.notes?.trim() || '', performedBy: req.user?.email || req.user?.id || 'unknown', createdAt: new Date() };
+              await StockMovementModel.create([movement], { session });
+              material = { ...material.toObject(), quantityOnHand: old + delta };
+            }); } finally { await session.endSession(); }
+            return material;
+          } catch (error) {
+            if (!isTransactionUnsupportedError(error)) {
+              throw error;
+            }
+          }
+        }
+        // Standalone MongoDB (serialized already locks materialId)
+        let material = await RawMaterialModel.findById(materialId);
+        if (!material) throw new Error('NOT_FOUND');
+        const old = Number(material.quantityOnHand || 0); if (old + delta < 0) throw new Error(`INSUFFICIENT:${material.name}:${old}`);
+        const update = await RawMaterialModel.updateOne({ _id: materialId, quantityOnHand: old }, { $inc: { quantityOnHand: delta } });
+        if (update.modifiedCount !== 1) throw new Error('CONCURRENT_STOCK');
+        const movement: IStockMovement = { idempotencyKey: `adjustment:${new mongoose.Types.ObjectId().toHexString()}`, materialId, materialName: material.name, unit: material.unit, movementType: delta > 0 ? 'stock_adjustment_increase' : 'stock_adjustment_decrease', quantity: body.quantity, previousQuantity: old, newQuantity: old + delta, reason: body.reason, notes: body.notes?.trim() || '', performedBy: req.user?.email || req.user?.id || 'unknown', createdAt: new Date() };
+        await StockMovementModel.create([movement]);
+        return { ...material.toObject(), quantityOnHand: old + delta };
       }
       const material = sharedRawMaterialMemoryStore.get(materialId);
       if (!material) throw new Error('NOT_FOUND');
