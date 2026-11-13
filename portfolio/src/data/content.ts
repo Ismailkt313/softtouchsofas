@@ -24,6 +24,7 @@ export const imageManifest = {
   international: { src: '/international-sofa-interior.jpg', alt: 'Sofa in a bright modern room' },
   sofaFinish: { src: '/sofa-finish-detail.jpg', alt: 'Close-up of a sofa arm and seam' },
   closingLiving: { src: '/sofa-detail-lifestyle.jpg', alt: 'Brown loveseat in a warm room' },
+  heroExploded: { src: '/softtouch-sofas-hero.jpg', alt: 'Exploded view of a sofa showing craftsmanship and construction' },
 } as const;
 
 export const collections = [
