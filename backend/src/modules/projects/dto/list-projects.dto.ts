@@ -115,10 +115,10 @@ export function validateListProjectsDto(
       const trimmed = query.category.trim();
       if (trimmed.toLowerCase() === 'all') {
         category = undefined;
-      } else if ((PROJECT_CATEGORIES as readonly string[]).includes(trimmed)) {
-        category = trimmed as ProjectCategory;
+      } else if (trimmed.length > 0 && trimmed.length <= 100) {
+        category = trimmed;
       } else {
-        errors.category = `Category filter must be one of: ${PROJECT_CATEGORIES.join(', ')}.`;
+        errors.category = 'Category filter must be a valid category name up to 100 characters.';
       }
     } else {
       errors.category = 'Category filter must be a string.';

@@ -555,4 +555,65 @@ export class PurchaseVoucherController {
       this.handleError(err, res, next);
     }
   };
+
+  getUnpaidSummary = async (
+    _req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const summary = await this.service.getUnpaidSummary();
+      res.status(200).json(summary);
+    } catch (err) {
+      this.handleError(err, res, next);
+    }
+  };
+
+  updatePaymentStatus = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const id = String(req.params.id || '');
+      const body = (req.body || {}) as Record<string, unknown>;
+      const paymentStatus = body.paymentStatus;
+      if (paymentStatus !== 'Paid' && paymentStatus !== 'Unpaid') {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: "Payment status must be 'Paid' or 'Unpaid'.",
+        });
+        return;
+      }
+
+      const caller = extractCaller(req);
+      const voucher = await this.service.updatePaymentStatus(
+        id,
+        paymentStatus,
+        caller,
+      );
+
+      await activityService.recordSafe({
+        actionType: 'purchase.updated',
+        entityType: 'purchase',
+        entityId: voucher.voucherNumber,
+        entityLabel: `${voucher.voucherNumber} (${voucher.supplierName})`,
+        description: `Marked purchase voucher ${voucher.voucherNumber} as ${paymentStatus}.`,
+        actorId: caller.id || caller.email || 'user',
+        actorName: caller.name || caller.email || 'Workspace User',
+        actorRole: caller.role,
+        projectRecordId: voucher.projectRecordId || null,
+        projectCode: voucher.projectCode || null,
+        projectName: voucher.projectName || null,
+        targetPath: `/purchases/${encodeURIComponent(voucher.voucherNumber)}`,
+      });
+
+      res.status(200).json({
+        message: `Purchase voucher marked as ${paymentStatus} successfully.`,
+        voucher,
+      });
+    } catch (err) {
+      this.handleError(err, res, next);
+    }
+  };
 }

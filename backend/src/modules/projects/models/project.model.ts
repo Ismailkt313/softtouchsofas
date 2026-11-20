@@ -8,7 +8,7 @@ export const PROJECT_CATEGORIES = [
   'Bespoke Interior',
 ] as const;
 
-export type ProjectCategory = (typeof PROJECT_CATEGORIES)[number];
+export type ProjectCategory = (typeof PROJECT_CATEGORIES)[number] | string;
 
 export const PROJECT_STATUSES = [
   'In Progress',
@@ -47,14 +47,15 @@ export interface IProject {
   category: ProjectCategory;
   status: ProjectStatus;
   description?: string;
-  contractValue: number;
+  contractValue?: number | null;
+  creationDate?: Date;
   costAlertThresholdPercent: number;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;
-  estimatedProfit: number;
-  costPercentage: number;
-  estimatedProfitMargin: number;
+  estimatedProfit?: number | null;
+  costPercentage?: number | null;
+  estimatedProfitMargin?: number | null;
   financialSummaryUpdatedAt: Date;
   costThresholdState: IProjectCostThresholdState;
   lastActivityAt: Date;
@@ -90,8 +91,9 @@ const ProjectSchema = new Schema<IProject>(
     },
     category: {
       type: String,
-      enum: PROJECT_CATEGORIES,
       required: true,
+      trim: true,
+      maxlength: 100,
       default: 'Modular Sofa',
     },
     status: {
@@ -106,10 +108,16 @@ const ProjectSchema = new Schema<IProject>(
       trim: true,
       default: '',
     },
+    creationDate: {
+      type: Date,
+      required: false,
+      default: () => new Date(),
+      index: true,
+    },
     contractValue: {
       type: Number,
-      required: true,
-      default: 0,
+      required: false,
+      default: null,
       min: 0,
     },
     costAlertThresholdPercent: {
@@ -138,19 +146,19 @@ const ProjectSchema = new Schema<IProject>(
     },
     estimatedProfit: {
       type: Number,
-      required: true,
-      default: 0,
+      required: false,
+      default: null,
     },
     costPercentage: {
       type: Number,
-      required: true,
-      default: 0,
+      required: false,
+      default: null,
       min: 0,
     },
     estimatedProfitMargin: {
       type: Number,
-      required: true,
-      default: 0,
+      required: false,
+      default: null,
     },
     financialSummaryUpdatedAt: {
       type: Date,

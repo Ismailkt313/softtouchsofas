@@ -10,7 +10,10 @@ const inrNumberFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 2,
 });
 
-function formatFixedAmount(value: number): string {
+function formatFixedAmount(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return 'N/A';
+  }
   const num = Number(value);
   if (!Number.isFinite(num)) {
     return '0.00';
@@ -18,7 +21,10 @@ function formatFixedAmount(value: number): string {
   return num.toFixed(2);
 }
 
-function formatPdfCurrency(value: number): string {
+function formatPdfCurrency(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return '—';
+  }
   const num = Number(value);
   if (!Number.isFinite(num)) {
     return 'INR 0.00';

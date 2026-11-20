@@ -66,6 +66,29 @@ export function validateListPurchaseVouchersDto(
     projectId = query.projectId.trim();
   }
 
+  let supplierId: string | undefined;
+  if (
+    typeof query.supplierId === 'string' &&
+    query.supplierId.trim() &&
+    query.supplierId.trim().toLowerCase() !== 'all'
+  ) {
+    supplierId = query.supplierId.trim();
+  }
+
+  let paymentStatus: ListPurchaseVouchersDto['paymentStatus'] = undefined;
+  if (query.paymentStatus !== undefined && query.paymentStatus !== '') {
+    const rawPaymentStatus = String(query.paymentStatus).trim();
+    if (rawPaymentStatus.toLowerCase() === 'paid') {
+      paymentStatus = 'Paid';
+    } else if (rawPaymentStatus.toLowerCase() === 'unpaid') {
+      paymentStatus = 'Unpaid';
+    } else if (rawPaymentStatus.toLowerCase() === 'all') {
+      paymentStatus = 'all';
+    } else {
+      errors.paymentStatus = "Payment status filter must be 'Paid', 'Unpaid', or 'all'.";
+    }
+  }
+
   let fromDate: Date | undefined;
   if (query.fromDate !== undefined && query.fromDate !== '') {
     const parsedFrom = parseDateBound(query.fromDate, false);
@@ -115,6 +138,8 @@ export function validateListPurchaseVouchersDto(
       limit,
       search,
       projectId,
+      supplierId,
+      paymentStatus,
       fromDate,
       toDate,
       status,

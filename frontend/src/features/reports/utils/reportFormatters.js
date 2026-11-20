@@ -49,9 +49,14 @@ export function buildSortOptionValue(sortBy = 'createdAt', sortOrder = 'desc') {
   return `${parsed.sortBy}:${parsed.sortOrder}`
 }
 
-export function formatReportCurrency(value) {
+export function formatReportCurrency(value, fallback = null) {
+  if (value === null || value === undefined) {
+    if (fallback !== null) return fallback
+    return inrFormatter.format(0)
+  }
   const num = Number(value)
   if (!Number.isFinite(num)) {
+    if (fallback !== null) return fallback
     return inrFormatter.format(0)
   }
   const normalized = Object.is(num, -0) ? 0 : num

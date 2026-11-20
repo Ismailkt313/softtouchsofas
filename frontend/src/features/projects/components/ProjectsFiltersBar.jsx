@@ -21,6 +21,7 @@ export function ProjectsFiltersBar({
   searchQuery,
   statusFilter,
   categoryFilter,
+  categories = PROJECT_CATEGORY_OPTIONS,
   hasActiveFilters,
   totalMatching,
   onSearchChange,
@@ -32,6 +33,35 @@ export function ProjectsFiltersBar({
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [draftStatus, setDraftStatus] = useState(statusFilter)
   const [draftCategory, setDraftCategory] = useState(categoryFilter)
+
+  const categoryOptions = useMemo(() => {
+    const rawList =
+      Array.isArray(categories) && categories.length > 0
+        ? categories.map((c) =>
+            typeof c === 'object' && c?.name ? c.name : String(c).trim(),
+          )
+        : PROJECT_CATEGORY_OPTIONS
+    const combined = Array.from(
+      new Set([...PROJECT_CATEGORY_OPTIONS, ...rawList]),
+    ).filter(Boolean)
+    return [
+      { value: 'all', label: 'All Categories' },
+      ...combined.map((cat) => ({ value: cat, label: cat })),
+    ]
+  }, [categories])
+
+  const mobileCategoryList = useMemo(() => {
+    const rawList =
+      Array.isArray(categories) && categories.length > 0
+        ? categories.map((c) =>
+            typeof c === 'object' && c?.name ? c.name : String(c).trim(),
+          )
+        : PROJECT_CATEGORY_OPTIONS
+    const combined = Array.from(
+      new Set([...PROJECT_CATEGORY_OPTIONS, ...rawList]),
+    ).filter(Boolean)
+    return ['all', ...combined]
+  }, [categories])
 
   const activeFilterCount =
     (statusFilter !== 'all' ? 1 : 0) + (categoryFilter !== 'all' ? 1 : 0)
@@ -196,7 +226,7 @@ export function ProjectsFiltersBar({
               id="projects-category-filter"
               variant="filter"
               value={categoryFilter}
-              options={CATEGORY_OPTIONS}
+              options={categoryOptions}
               onChange={(val) => onCategoryFilterChange(val)}
             />
           </div>
@@ -262,7 +292,7 @@ export function ProjectsFiltersBar({
         <div className="sts-sheet-field">
           <span className="sts-sheet-field__label">Category</span>
           <div className="sts-sheet-options" role="radiogroup" aria-label="Project Category">
-            {['all', ...PROJECT_CATEGORY_OPTIONS].map((option) => {
+            {mobileCategoryList.map((option) => {
               const isSelected = draftCategory === option
               return (
                 <button

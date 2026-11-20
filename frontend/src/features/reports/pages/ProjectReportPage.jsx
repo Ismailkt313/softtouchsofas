@@ -428,9 +428,9 @@ export function ProjectReportPage({ projectId, currentUser, onNavigate }) {
               </div>
 
               <div>
-                <span className="rep-info-item__label">Created / Start Date</span>
+                <span className="rep-info-item__label">Creation Date</span>
                 <div className="rep-info-item__val">
-                  {formatReportDate(project.createdAt)}
+                  {formatReportDate(project.creationDate || project.createdAt)}
                 </div>
               </div>
 
@@ -543,12 +543,15 @@ export function ProjectReportPage({ projectId, currentUser, onNavigate }) {
 
             {/* B. Visually Prominent Estimated Profit Section */}
             {(() => {
-              const estProfit = lifetime?.estimatedProfit ?? 0
-              const isProfitPositive = estProfit > 0
-              const isProfitNegative = estProfit < 0
-              const numContract = Number(lifetime?.contractValue ?? 0)
+              const hasContract =
+                (lifetime?.contractValue ?? project?.contractValue) !== null &&
+                (lifetime?.contractValue ?? project?.contractValue) !== undefined
+              const estProfit = hasContract ? lifetime?.estimatedProfit : null
+              const isProfitPositive = hasContract && estProfit !== null && estProfit > 0
+              const isProfitNegative = hasContract && estProfit !== null && estProfit < 0
+              const numContract = hasContract ? Number(lifetime?.contractValue ?? project?.contractValue ?? 0) : 0
               const numCosts = Number(lifetime?.totalProjectCosts ?? 0)
-              const isOverBudget = numContract > 0 && numCosts > numContract
+              const isOverBudget = hasContract && numContract > 0 && numCosts > numContract
               const overBudgetAmt = isOverBudget ? numCosts - numContract : 0
 
               return (
@@ -558,8 +561,10 @@ export function ProjectReportPage({ projectId, currentUser, onNavigate }) {
                       <span>Estimated Profit</span>
                       <span className="rep-profit-hero__badge">Unaudited</span>
                     </div>
-                    <div className={`rep-profit-hero__amount ${isProfitNegative ? 'rep-profit-hero__amount--loss' : 'rep-profit-hero__amount--positive'}`}>
-                      {formatReportCurrency(estProfit)}
+                    <div className={`rep-profit-hero__amount ${isProfitNegative ? 'rep-profit-hero__amount--loss' : isProfitPositive ? 'rep-profit-hero__amount--positive' : ''}`}>
+                      {hasContract && estProfit !== null && estProfit !== undefined
+                        ? formatReportCurrency(estProfit)
+                        : '—'}
                     </div>
                   </div>
 

@@ -15,6 +15,8 @@ import reportRoutes from './routes/reportRoutes';
 import activityRoutes from './routes/activityRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import permissionRoutes from './routes/permissionRoutes';
+import supplierRoutes from './routes/supplierRoutes';
+import miscBusinessRouter from './modules/misc-business';
 
 const app = express();
 const PORT = env.PORT;
@@ -82,6 +84,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/admin', adminRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/projects', projectRoutes);
 app.use('/api/raw-materials', rawMaterialRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/expenses', expenseRoutes);
@@ -89,6 +92,10 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/suppliers', supplierRoutes);
+app.use('/api/misc-business', miscBusinessRouter);
+app.use('/misc-business', miscBusinessRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({

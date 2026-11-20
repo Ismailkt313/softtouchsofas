@@ -50,9 +50,11 @@ const IGNORED_CALCULATED_FIELDS = new Set([
 
 const ALLOWED_CREATE_FIELDS = new Set([
   'purchaseDate',
+  'supplierId',
   'supplierName',
   'supplierInvoiceNumber',
   'projectId',
+  'paymentStatus',
   'entryMethod',
   'lineItems',
   'discountAmount',
@@ -470,6 +472,32 @@ export function validateCreatePurchaseVoucherDto(
   const purchaseDate = parsePurchaseDateInput(raw.purchaseDate);
 
 
+  let supplierId: string | null = null;
+  if (
+    raw.supplierId !== undefined &&
+    raw.supplierId !== null &&
+    String(raw.supplierId).trim() !== ''
+  ) {
+    if (typeof raw.supplierId !== 'string') {
+      errors.supplierId = 'Supplier identifier must be a string.';
+    } else {
+      supplierId = raw.supplierId.trim();
+    }
+  }
+
+  let paymentStatus: 'Paid' | 'Unpaid' = 'Unpaid';
+  if (
+    raw.paymentStatus !== undefined &&
+    raw.paymentStatus !== null &&
+    raw.paymentStatus !== ''
+  ) {
+    if (raw.paymentStatus === 'Paid' || raw.paymentStatus === 'Unpaid') {
+      paymentStatus = raw.paymentStatus;
+    } else {
+      errors.paymentStatus = "Payment status must be 'Paid' or 'Unpaid'.";
+    }
+  }
+
   let supplierName = '';
   if (typeof raw.supplierName !== 'string' || !raw.supplierName.trim()) {
     errors.supplierName = 'Supplier name is required.';
@@ -584,9 +612,11 @@ export function validateCreatePurchaseVoucherDto(
     isValid: true,
     value: {
       purchaseDate,
+      supplierId,
       supplierName,
       supplierInvoiceNumber,
       projectId,
+      paymentStatus,
       entryMethod,
       lineItems: lineItemsParsed.items,
       discountAmount: discountParsed.value,

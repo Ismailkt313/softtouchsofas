@@ -10,6 +10,14 @@ function getStatusPillClass(status) {
 }
 
 function getProfitClass(estimatedProfit, contractValue) {
+  if (
+    contractValue === null ||
+    contractValue === undefined ||
+    estimatedProfit === null ||
+    estimatedProfit === undefined
+  ) {
+    return 'rep-profit-val--neutral'
+  }
   const numProfit = Number(estimatedProfit || 0)
   const numContract = Number(contractValue || 0)
   if (numContract === 0 && numProfit === 0) return 'rep-profit-val--neutral'
@@ -80,7 +88,7 @@ export function ReportsTable({ rows, onOpenProjectReport }) {
                 {/* 3. Contract Value */}
                 <td className="rep-table__td-num">
                   <span className="rep-num-val">
-                    {formatReportCurrency(row.contractValue)}
+                    {formatReportCurrency(row.contractValue, '—')}
                   </span>
                 </td>
 
@@ -95,7 +103,11 @@ export function ReportsTable({ rows, onOpenProjectReport }) {
                 <td className="rep-table__td-num">
                   <div className="rep-profit-wrap">
                     <span className={`rep-profit-val ${profitClass}`}>
-                      {formatReportCurrency(row.estimatedProfit)}
+                      {row.contractValue !== null &&
+                      row.contractValue !== undefined &&
+                      row.estimatedProfit !== null
+                        ? formatReportCurrency(row.estimatedProfit)
+                        : '—'}
                     </span>
                     {isOverBudget ? (
                       <span

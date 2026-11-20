@@ -1,5 +1,6 @@
 import { env } from '../../../config/env';
 import { CreateProjectDto } from '../dto/create-project.dto';
+import { validateCreateProjectCategoryDto } from '../dto/project-category.dto';
 import {
   ListActivityWarningsDto,
   ListProjectAlertsDto,
@@ -25,6 +26,7 @@ import {
   IVoucherTotalsProvider,
   PaginatedResult,
   ProjectActivityWarningResponseDto,
+  ProjectCategoryResponseDto,
   ProjectCostAlertResponseDto,
   ProjectFinancialSummaryDto,
   ProjectResponseDto,
@@ -79,6 +81,7 @@ function mapProjectResponse(project: IProject): ProjectResponseDto {
     description: project.description || '',
     materialsUsed: (project.materialsUsed || []).map((line) => ({ ...line })),
     contractValue: metrics.contractValue,
+    creationDate: project.creationDate || project.createdAt,
     totalPurchases: metrics.totalPurchases,
     totalOtherExpenses: metrics.totalOtherExpenses,
     totalCost: metrics.totalCost,
@@ -117,6 +120,7 @@ function mapFinancialSummary(project: IProject): ProjectFinancialSummaryDto {
     clientName: project.clientName,
     status: project.status,
     contractValue: metrics.contractValue,
+    creationDate: project.creationDate || project.createdAt,
     totalPurchases: metrics.totalPurchases,
     totalOtherExpenses: metrics.totalOtherExpenses,
     totalCost: metrics.totalCost,
@@ -204,6 +208,47 @@ export class ProjectService implements IProjectService {
     };
   }
 
+  async listCategories(): Promise<ProjectCategoryResponseDto[]> {
+    const categories = await this.projectRepository.listCategories();
+    return categories.map((cat) => ({
+      id: String(cat._id),
+      name: cat.name,
+      isPredefined: Boolean(cat.isPredefined),
+      isActive: Boolean(cat.isActive),
+      createdAt: cat.createdAt ? new Date(cat.createdAt).toISOString() : undefined,
+      updatedAt: cat.updatedAt ? new Date(cat.updatedAt).toISOString() : undefined,
+    }));
+  }
+
+  async createCategory(
+    rawBody: unknown,
+    createdBy: string,
+  ): Promise<ProjectCategoryResponseDto> {
+    const validation = validateCreateProjectCategoryDto(rawBody);
+    if (!validation.isValid || !validation.value) {
+      const firstErrorMessage =
+        Object.values(validation.errors)[0] || 'Invalid category name.';
+      throw new InvalidProjectOperationError(firstErrorMessage);
+    }
+
+    const created = await this.projectRepository.createCategory({
+      name: validation.value.name,
+      normalizedName: validation.value.name.toLowerCase(),
+      isPredefined: false,
+      isActive: true,
+      createdBy: createdBy || 'system',
+    });
+
+    return {
+      id: String(created._id),
+      name: created.name,
+      isPredefined: Boolean(created.isPredefined),
+      isActive: Boolean(created.isActive),
+      createdAt: created.createdAt ? new Date(created.createdAt).toISOString() : undefined,
+      updatedAt: created.updatedAt ? new Date(created.updatedAt).toISOString() : undefined,
+    };
+  }
+
   private async withProjectLock<T>(
     recordId: string,
     operation: () => Promise<T>,
@@ -232,9 +277,9 @@ export class ProjectService implements IProjectService {
     recordId: string;
     projectId: string;
     projectName: string;
-    contractValue: number;
+    contractValue: number | null;
     totalCost: number;
-    costPercentage: number;
+    costPercentage: number | null;
     warningThresholdPercent: number;
     previousState: IProject['costThresholdState'];
     now: Date;
@@ -276,9 +321,9 @@ export class ProjectService implements IProjectService {
         projectName: params.projectName,
         thresholdType: 'warning',
         thresholdPercent: params.warningThresholdPercent,
-        contractValue: params.contractValue,
+        contractValue: params.contractValue ?? 0,
         totalCost: params.totalCost,
-        costPercentage: params.costPercentage,
+        costPercentage: params.costPercentage ?? 0,
         message: `Project ${params.projectId} (${params.projectName}) has reached ${params.costPercentage}% of contract value (warning threshold: ${params.warningThresholdPercent}%).`,
         status: 'active',
         triggeredAt: params.now,
@@ -290,7 +335,7 @@ export class ProjectService implements IProjectService {
 
     if (transition.triggerCriticalAlert) {
       const criticalMessage =
-        params.contractValue > 0
+        params.contractValue !== null && params.contractValue > 0
           ? `Project ${params.projectId} (${params.projectName}) total cost (${params.totalCost}) has reached or exceeded 100% of contract value (${params.costPercentage}%).`
           : `Project ${params.projectId} (${params.projectName}) has incurred costs (${params.totalCost}) against a zero contract value.`;
 
@@ -300,9 +345,9 @@ export class ProjectService implements IProjectService {
         projectName: params.projectName,
         thresholdType: 'critical',
         thresholdPercent: transition.criticalThresholdPercent,
-        contractValue: params.contractValue,
+        contractValue: params.contractValue ?? 0,
         totalCost: params.totalCost,
-        costPercentage: params.costPercentage,
+        costPercentage: params.costPercentage ?? 0,
         message: criticalMessage,
         status: 'active',
         triggeredAt: params.now,
@@ -338,6 +383,7 @@ export class ProjectService implements IProjectService {
         status: dto.status,
         description: dto.description,
         contractValue: initialMetrics.contractValue,
+        creationDate: dto.creationDate ? new Date(dto.creationDate) : now,
         costAlertThresholdPercent: dto.costAlertThresholdPercent,
         totalPurchases: initialMetrics.totalPurchases,
         totalOtherExpenses: initialMetrics.totalOtherExpenses,
@@ -407,9 +453,16 @@ export class ProjectService implements IProjectService {
       const nextCategory = dto.category ?? fresh.category;
       const nextStatus = dto.status ?? fresh.status;
       const nextDescription = dto.description ?? fresh.description ?? '';
-      const nextContractValue = dto.contractValue ?? fresh.contractValue;
+      const nextContractValue = dto.contractValue !== undefined ? dto.contractValue : fresh.contractValue;
+      const nextCreationDate = dto.creationDate !== undefined ? dto.creationDate : (fresh.creationDate || fresh.createdAt);
       const nextWarningThreshold =
         dto.costAlertThresholdPercent ?? fresh.costAlertThresholdPercent;
+
+      const creationDateChanged =
+        dto.creationDate !== undefined &&
+        (!fresh.creationDate ||
+          new Date(dto.creationDate).getTime() !==
+            new Date(fresh.creationDate).getTime());
 
       const hasOperationalProjectUpdate =
         nextName !== fresh.name ||
@@ -417,7 +470,8 @@ export class ProjectService implements IProjectService {
         nextCategory !== fresh.category ||
         nextStatus !== fresh.status ||
         nextDescription !== (fresh.description ?? '') ||
-        nextContractValue !== fresh.contractValue;
+        nextContractValue !== fresh.contractValue ||
+        creationDateChanged;
 
       const voucherTotals =
         await this.voucherTotalsProvider.aggregateProjectVouchers(
@@ -479,6 +533,7 @@ export class ProjectService implements IProjectService {
         status: nextStatus,
         description: nextDescription,
         contractValue: metrics.contractValue,
+        creationDate: nextCreationDate,
         costAlertThresholdPercent: nextWarningThreshold,
         totalPurchases: metrics.totalPurchases,
         totalOtherExpenses: metrics.totalOtherExpenses,

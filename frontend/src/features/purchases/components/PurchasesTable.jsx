@@ -4,6 +4,7 @@ import {
 } from '../services/purchaseService'
 import {
   PurchaseAttachmentIndicator,
+  PurchasePaymentStatusBadge,
   PurchaseStatusBadge,
 } from './PurchaseStatusBadge'
 
@@ -13,6 +14,8 @@ export function PurchasesTable({
   onViewVoucher,
   onEditVoucher,
   onViewProject,
+  onMarkPaid,
+  onViewSupplier,
 }) {
   return (
     <div className="pv-table-wrap">
@@ -34,6 +37,9 @@ export function PurchasesTable({
             <th scope="col" className="pv-table__th-total">
               Total Amount
             </th>
+            <th scope="col" className="pv-table__th-payment-status">
+              Payment
+            </th>
             <th scope="col" className="pv-table__th-status">
               Status
             </th>
@@ -45,6 +51,7 @@ export function PurchasesTable({
         <tbody>
           {vouchers.map((voucher) => {
             const isCancelled = voucher.status === 'cancelled'
+            const isUnpaid = (voucher.paymentStatus || 'Unpaid') === 'Unpaid'
             const itemCount = voucher.lineItems?.length || 0
 
             return (
@@ -87,9 +94,27 @@ export function PurchasesTable({
 
                 {/* 3. Supplier Name */}
                 <td className="pv-table__td-supplier">
-                  <span className="pv-supplier-name" title={voucher.supplierName}>
-                    {voucher.supplierName}
-                  </span>
+                  {onViewSupplier ? (
+                    <button
+                      type="button"
+                      className="pv-supplier-link"
+                      onClick={() =>
+                        onViewSupplier(
+                          voucher.supplierId || voucher.supplierName,
+                        )
+                      }
+                      title={`View details for ${voucher.supplierName}`}
+                    >
+                      {voucher.supplierName}
+                    </button>
+                  ) : (
+                    <span
+                      className="pv-supplier-name"
+                      title={voucher.supplierName}
+                    >
+                      {voucher.supplierName}
+                    </span>
+                  )}
                 </td>
 
                 {/* 4. Project or General Stock */}
@@ -130,7 +155,14 @@ export function PurchasesTable({
                   </span>
                 </td>
 
-                {/* 6. Status & Attachments Cluster */}
+                {/* 6. Payment Status */}
+                <td className="pv-table__td-payment-status">
+                  <PurchasePaymentStatusBadge
+                    paymentStatus={voucher.paymentStatus}
+                  />
+                </td>
+
+                {/* 7. Status & Attachments Cluster */}
                 <td className="pv-table__td-status">
                   <div className="pv-status-cluster">
                     <PurchaseStatusBadge status={voucher.status} />
@@ -142,9 +174,19 @@ export function PurchasesTable({
                   </div>
                 </td>
 
-                {/* 7. Action: Compact View & optional Edit */}
+                {/* 8. Action: Mark Paid, View & optional Edit */}
                 <td className="pv-table__td-actions">
                   <div className="pv-row-actions">
+                    {!isCancelled && isUnpaid && onMarkPaid ? (
+                      <button
+                        type="button"
+                        className="pv-btn-mark-paid"
+                        onClick={() => onMarkPaid(voucher.id)}
+                        title="Mark this purchase voucher as Paid"
+                      >
+                        Mark Paid
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="pv-btn-view"

@@ -67,11 +67,11 @@ export interface DashboardProjectPerformanceRowDto {
   clientName: string;
   category: ProjectCategory;
   status: ProjectStatus;
-  contractValue: number;
+  contractValue: number | null;
   materialPurchaseCosts: number;
   otherProjectExpenses: number;
   totalProjectCosts: number;
-  estimatedProfit: number;
+  estimatedProfit: number | null;
   profitMargin: number | null;
   marginApplicable: boolean;
   costPercentage: number | null;

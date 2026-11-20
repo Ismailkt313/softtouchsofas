@@ -22,6 +22,8 @@ export function ProjectsPage({ currentUser, onNavigate }) {
     setCurrentPage,
 
     statusCounts,
+    categories,
+    addCategoryLocally,
     canCreateProject,
     canEditProject,
     canViewProfitability,
@@ -182,6 +184,7 @@ export function ProjectsPage({ currentUser, onNavigate }) {
               searchQuery={searchInput}
               statusFilter={statusFilter}
               categoryFilter={categoryFilter}
+              categories={categories}
               hasActiveFilters={hasActiveFilters}
               totalMatching={totalProjects}
               onSearchChange={handleSearchChange}
@@ -350,6 +353,8 @@ export function ProjectsPage({ currentUser, onNavigate }) {
         <ProjectFormModal
           key="create-project-modal"
           mode="create"
+          categories={categories}
+          onCategoryCreated={addCategoryLocally}
           isOpen
           onClose={closeCreateModal}
           onSubmit={handleCreateSubmit}
@@ -361,6 +366,8 @@ export function ProjectsPage({ currentUser, onNavigate }) {
           key={`edit-project-${editingProject.id || editingProject.projectId}`}
           mode="edit"
           project={editingProject}
+          categories={categories}
+          onCategoryCreated={addCategoryLocally}
           isOpen
           onClose={closeEditModal}
           onSubmit={handleEditSubmit}

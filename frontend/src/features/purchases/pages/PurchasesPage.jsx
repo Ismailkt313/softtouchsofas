@@ -11,6 +11,7 @@ import { PurchasesTable } from '../components/PurchasesTable'
 import {
   fetchPurchaseVouchers,
   hasActiveAuthToken,
+  updatePurchasePaymentStatus,
 } from '../services/purchaseService'
 import '../styles/purchases.css'
 
@@ -248,8 +249,72 @@ export function PurchasesPage({ currentUser, onNavigate }) {
     setValues({ page: newPage, limit: nextLimit })
   }
 
+  const [toastMessage, setToastMessage] = useState(null)
+  const showToast = useCallback((msg, type = 'success') => {
+    setToastMessage({ text: msg, type })
+    window.setTimeout(() => setToastMessage(null), 3500)
+  }, [])
+
+  const handleMarkPaid = useCallback(
+    async (voucherId) => {
+      try {
+        setVouchers((prev) =>
+          prev.map((v) =>
+            v.id === voucherId
+              ? { ...v, paymentStatus: 'Paid', paidAt: new Date().toISOString() }
+              : v,
+          ),
+        )
+        await updatePurchasePaymentStatus(voucherId, 'Paid')
+        showToast('Purchase voucher marked as Paid successfully.', 'success')
+      } catch (err) {
+        showToast(err?.message || 'Failed to mark voucher as paid.', 'error')
+        setReloadTick((t) => t + 1)
+      }
+    },
+    [showToast],
+  )
+
   return (
     <div className="pv-page">
+      {toastMessage ? (
+        <div
+          className={`pv-toast pv-toast--${toastMessage.type}`}
+          style={{
+            position: 'fixed',
+            top: '1.5rem',
+            right: '1.5rem',
+            zIndex: 9999,
+            padding: '0.85rem 1.25rem',
+            borderRadius: '8px',
+            backgroundColor: toastMessage.type === 'error' ? '#fde8e8' : '#e6f4ea',
+            color: toastMessage.type === 'error' ? '#9b1c1c' : '#137333',
+            border: `1px solid ${toastMessage.type === 'error' ? '#f8b4b4' : '#a8dab5'}`,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            fontWeight: 500,
+          }}
+          role="alert"
+        >
+          <span>{toastMessage.text}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '1.1rem',
+              color: 'inherit',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+
       <header className="pv-header">
         <div className="pv-header__text">
           <h1 className="pv-header__title">Purchases</h1>
@@ -419,6 +484,14 @@ export function PurchasesPage({ currentUser, onNavigate }) {
                   onEditVoucher={(id) =>
                     onNavigate?.(`/purchases/${encodeURIComponent(id)}/edit`)
                   }
+                  onMarkPaid={canEditVoucher ? handleMarkPaid : null}
+                  onViewSupplier={(supplierKey) =>
+                    onNavigate?.(
+                      /^[a-f\d]{24}$/i.test(supplierKey)
+                        ? `/suppliers/${encodeURIComponent(supplierKey)}`
+                        : `/suppliers?search=${encodeURIComponent(supplierKey)}`,
+                    )
+                  }
                   onViewProject={
                     canViewProjects
                       ? (projId) =>
@@ -437,6 +510,14 @@ export function PurchasesPage({ currentUser, onNavigate }) {
                   }
                   onEditVoucher={(id) =>
                     onNavigate?.(`/purchases/${encodeURIComponent(id)}/edit`)
+                  }
+                  onMarkPaid={canEditVoucher ? handleMarkPaid : null}
+                  onViewSupplier={(supplierKey) =>
+                    onNavigate?.(
+                      /^[a-f\d]{24}$/i.test(supplierKey)
+                        ? `/suppliers/${encodeURIComponent(supplierKey)}`
+                        : `/suppliers?search=${encodeURIComponent(supplierKey)}`,
+                    )
                   }
                 />
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  requireAnyPermission,
   requirePermission,
   verifyToken,
 } from '../../middleware/auth';
@@ -11,6 +12,10 @@ import {
   CreateProjectDto,
   validateCreateProjectDto,
 } from './dto/create-project.dto';
+import {
+  CreateProjectCategoryDto,
+  validateCreateProjectCategoryDto,
+} from './dto/project-category.dto';
 import {
   EvaluateActivityWarningsDto,
   ListActivityWarningsDto,
@@ -45,6 +50,12 @@ import {
   sharedProjectCounterMemoryStore,
 } from './models/project-counter.model';
 import {
+  DEFAULT_PROJECT_CATEGORIES,
+  IProjectCategory,
+  ProjectCategoryModel,
+  sharedProjectCategoryMemoryStore,
+} from './models/project-category.model';
+import {
   IProject,
   PROJECT_CATEGORIES,
   PROJECT_STATUSES,
@@ -54,6 +65,7 @@ import {
   sharedProjectMemoryStore,
 } from './models/project.model';
 import {
+  DuplicateProjectCategoryError,
   IProjectRepository,
   ProjectPersistenceError,
   ProjectRepository,
@@ -120,6 +132,17 @@ projectRouter.get(
 );
 
 projectRouter.get(
+  '/categories',
+  requirePermission('projects.view'),
+  projectController.listCategories,
+);
+projectRouter.post(
+  '/categories',
+  requireAnyPermission(['projects.create', 'projects.edit']),
+  projectController.createCategory,
+);
+
+projectRouter.get(
   '/',
   requirePermission('projects.view'),
   projectController.list,
@@ -177,12 +200,15 @@ export {
   ProjectCounterModel,
   ProjectCostAlertModel,
   ProjectActivityWarningModel,
+  ProjectCategoryModel,
   sharedProjectMemoryStore,
   sharedProjectCounterMemoryStore,
   sharedProjectCostAlertMemoryStore,
   sharedProjectActivityWarningMemoryStore,
+  sharedProjectCategoryMemoryStore,
   PROJECT_SEQUENCE_COUNTER_ID,
   PROJECT_CATEGORIES,
+  DEFAULT_PROJECT_CATEGORIES,
   PROJECT_STATUSES,
   formatProjectSequenceCode,
   extractProjectSequenceNumber,
@@ -193,6 +219,7 @@ export {
   NoopVoucherTotalsProvider,
   MongooseVoucherTotalsProvider,
   validateCreateProjectDto,
+  validateCreateProjectCategoryDto,
   validateUpdateProjectDto,
   validateUpdateProjectStatusDto,
   validateListProjectsDto,
@@ -201,6 +228,7 @@ export {
   validateEvaluateActivityWarningsDto,
   ProjectNotFoundError,
   InvalidProjectOperationError,
+  DuplicateProjectCategoryError,
   ProjectPersistenceError,
 };
 

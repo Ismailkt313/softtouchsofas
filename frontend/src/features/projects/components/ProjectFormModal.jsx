@@ -1,9 +1,13 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { Dropdown } from '../../../components/common'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Dropdown, DatePicker } from '../../../components/common'
 import {
+  createProjectCategory,
+  fetchProjectCategories,
   PROJECT_CATEGORY_OPTIONS,
   PROJECT_STATUS_OPTIONS,
+  toProjectDateInputValue,
 } from '../services/projectService'
+import { validateProjectCategoryInput } from '../utils/projectCategoryValidation'
 
 const MAX_NAME_LENGTH = 200
 const MAX_DESCRIPTION_LENGTH = 2000
@@ -13,6 +17,7 @@ const FIELD_DOM_IDS = {
   name: 'project-form-name',
   clientName: 'project-form-client',
   category: 'project-form-category',
+  creationDate: 'project-form-creation-date',
   contractValue: 'project-form-contract',
   status: 'project-form-status',
   description: 'project-form-description',
@@ -25,6 +30,7 @@ function buildInitialFormValues(project, isEditMode) {
       name: '',
       clientName: '',
       category: PROJECT_CATEGORY_OPTIONS[0],
+      creationDate: toProjectDateInputValue(null),
       contractValue: '',
       description: '',
     }
@@ -33,16 +39,20 @@ function buildInitialFormValues(project, isEditMode) {
   return {
     name: project.name || '',
     clientName: project.clientName || '',
-    category: PROJECT_CATEGORY_OPTIONS.includes(project.category)
-      ? project.category
-      : PROJECT_CATEGORY_OPTIONS[0],
+    category:
+      typeof project.category === 'string' && project.category.trim()
+        ? project.category.trim()
+        : PROJECT_CATEGORY_OPTIONS[0],
+    creationDate: toProjectDateInputValue(
+      project.creationDate || project.createdAt,
+    ),
     status: PROJECT_STATUS_OPTIONS.includes(project.status)
       ? project.status
       : PROJECT_STATUS_OPTIONS[0],
     contractValue:
       project.contractValue !== undefined && project.contractValue !== null
         ? String(project.contractValue)
-        : '0',
+        : '',
     costAlertThresholdPercent:
       project.costAlertThresholdPercent !== undefined &&
       project.costAlertThresholdPercent !== null
@@ -69,8 +79,18 @@ function validateProjectFormValues(values, isEditMode) {
     errors.clientName = `Client name cannot exceed ${MAX_NAME_LENGTH} characters.`
   }
 
-  if (!PROJECT_CATEGORY_OPTIONS.includes(values.category)) {
+  const trimmedCategory = String(values.category || '').trim()
+  if (!trimmedCategory) {
     errors.category = 'Please select a valid project category.'
+  } else if (trimmedCategory.length > 100) {
+    errors.category = 'Category cannot exceed 100 characters.'
+  }
+
+  const rawCreationDate = String(values.creationDate ?? '').trim()
+  if (!rawCreationDate) {
+    errors.creationDate = 'Creation date is required.'
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(rawCreationDate)) {
+    errors.creationDate = 'Please select a valid date (YYYY-MM-DD).'
   }
 
   if (isEditMode && !PROJECT_STATUS_OPTIONS.includes(values.status)) {
@@ -78,9 +98,7 @@ function validateProjectFormValues(values, isEditMode) {
   }
 
   const rawContract = String(values.contractValue ?? '').trim()
-  if (rawContract === '') {
-    errors.contractValue = 'Fixed contract value is required.'
-  } else {
+  if (rawContract !== '') {
     const parsedContract = Number(rawContract)
     if (!Number.isFinite(parsedContract) || parsedContract < 0) {
       errors.contractValue =
@@ -118,6 +136,7 @@ function focusFirstInvalidField(validationErrors) {
     'name',
     'clientName',
     'category',
+    'creationDate',
     'contractValue',
     'status',
     'description',
@@ -137,6 +156,8 @@ function focusFirstInvalidField(validationErrors) {
 export function ProjectFormModal({
   mode = 'create',
   project = null,
+  categories: initialCategories = null,
+  onCategoryCreated,
   isOpen,
   onClose,
   onSubmit,
@@ -150,6 +171,81 @@ export function ProjectFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAdditionalOpen, setIsAdditionalOpen] = useState(false)
 
+  const [categoriesList, setCategoriesList] = useState(() => {
+    const base =
+      Array.isArray(initialCategories) && initialCategories.length > 0
+        ? initialCategories
+        : PROJECT_CATEGORY_OPTIONS
+    const mapped = base.map((c) =>
+      typeof c === 'object' && c?.name ? c.name : String(c).trim(),
+    )
+    const merged = new Set([...PROJECT_CATEGORY_OPTIONS, ...mapped])
+    if (project?.category) {
+      merged.add(project.category)
+    }
+    return Array.from(merged).filter(Boolean)
+  })
+
+  useEffect(() => {
+    if (Array.isArray(initialCategories) && initialCategories.length > 0) {
+      setCategoriesList((prev) => {
+        const mapped = initialCategories.map((c) =>
+          typeof c === 'object' && c?.name ? c.name : String(c).trim(),
+        )
+        const merged = new Set([...PROJECT_CATEGORY_OPTIONS, ...prev, ...mapped])
+        if (project?.category) {
+          merged.add(project.category)
+        }
+        return Array.from(merged).filter(Boolean)
+      })
+    }
+  }, [initialCategories, project?.category])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!initialCategories || initialCategories.length === 0) {
+      fetchProjectCategories().then((list) => {
+        if (!cancelled && Array.isArray(list) && list.length > 0) {
+          setCategoriesList((prev) => {
+            const merged = new Set([...PROJECT_CATEGORY_OPTIONS, ...prev, ...list])
+            if (project?.category) {
+              merged.add(project.category)
+            }
+            return Array.from(merged).filter(Boolean)
+          })
+        }
+      })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [initialCategories, project?.category])
+
+  const [isAddingCustomCategory, setIsAddingCustomCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [categoryCreateError, setCategoryCreateError] = useState('')
+  const [isSavingCategory, setIsSavingCategory] = useState(false)
+  const customCategoryInputRef = useRef(null)
+
+  useEffect(() => {
+    if (isAddingCustomCategory) {
+      customCategoryInputRef.current?.focus()
+    }
+  }, [isAddingCustomCategory])
+
+  const dropdownCategoryOptions = useMemo(() => {
+    const options = categoriesList.map((cat) => ({
+      value: cat,
+      label: cat,
+    }))
+    options.push({
+      value: '__add_custom_category__',
+      label: '+ Add Custom Category',
+      isCreateAction: true,
+    })
+    return options
+  }, [categoriesList])
+
   const submittingLockRef = useRef(false)
   const backdropMouseDownRef = useRef(false)
   const nameInputRef = useRef(null)
@@ -159,6 +255,7 @@ export function ProjectFormModal({
   const nameErrorId = useId()
   const clientErrorId = useId()
   const categoryErrorId = useId()
+  const creationDateErrorId = useId()
   const contractErrorId = useId()
   const statusErrorId = useId()
   const notesErrorId = useId()
@@ -242,6 +339,48 @@ export function ProjectFormModal({
     }
   }
 
+  const handleSaveCustomCategory = async () => {
+    const validationError = validateProjectCategoryInput(
+      newCategoryName,
+      categoriesList,
+    )
+    if (validationError) {
+      setCategoryCreateError(validationError)
+      customCategoryInputRef.current?.focus()
+      return
+    }
+
+    const trimmed = String(newCategoryName || '').trim().replace(/\s+/g, ' ')
+
+    setIsSavingCategory(true)
+    setCategoryCreateError('')
+    try {
+      const created = await createProjectCategory(trimmed)
+      const finalName = created?.name || trimmed
+      setCategoriesList((prev) => {
+        if (prev.includes(finalName)) return prev
+        return [...prev, finalName]
+      })
+      updateFieldValue('category', finalName)
+      setIsAddingCustomCategory(false)
+      setNewCategoryName('')
+      onCategoryCreated?.(finalName)
+    } catch (err) {
+      setCategoryCreateError(
+        err?.message || 'Failed to create category. Please try again.',
+      )
+      customCategoryInputRef.current?.focus()
+    } finally {
+      setIsSavingCategory(false)
+    }
+  }
+
+  const handleCancelCustomCategory = () => {
+    setIsAddingCustomCategory(false)
+    setNewCategoryName('')
+    setCategoryCreateError('')
+  }
+
   const handleFormSubmit = async (event) => {
     event.preventDefault()
     if (submittingLockRef.current || isSubmitting) {
@@ -267,11 +406,16 @@ export function ProjectFormModal({
     setIsSubmitting(true)
 
     try {
+      const rawContractValue = String(values.contractValue ?? '').trim()
       const payload = {
         name: values.name.trim(),
         clientName: values.clientName.trim(),
         category: values.category,
-        contractValue: Number(String(values.contractValue).trim()),
+        creationDate: values.creationDate
+          ? String(values.creationDate).trim()
+          : undefined,
+        contractValue:
+          rawContractValue === '' ? null : Number(rawContractValue),
         description: values.description.trim(),
       }
 
@@ -481,11 +625,84 @@ export function ProjectFormModal({
                   name="category"
                   variant="form"
                   value={values.category}
-                  options={PROJECT_CATEGORY_OPTIONS}
-                  onChange={(val) => updateFieldValue('category', val)}
-                  disabled={isSubmitting}
+                  options={dropdownCategoryOptions}
+                  onChange={(val) => {
+                    if (val === '__add_custom_category__') {
+                      setIsAddingCustomCategory(true)
+                      setNewCategoryName('')
+                      setCategoryCreateError('')
+                      return
+                    }
+                    updateFieldValue('category', val)
+                  }}
+                  onCreateOption={() => {
+                    setIsAddingCustomCategory(true)
+                    setNewCategoryName('')
+                    setCategoryCreateError('')
+                  }}
+                  disabled={isSubmitting || isSavingCategory}
                   error={Boolean(errors.category)}
                 />
+                {isAddingCustomCategory ? (
+                  <div
+                    className="projects-category-inline-create"
+                    role="region"
+                    aria-label="Add custom category"
+                  >
+                    <div className="projects-category-inline-create__row">
+                      <input
+                        ref={customCategoryInputRef}
+                        type="text"
+                        className={`projects-category-inline-create__input${
+                          categoryCreateError
+                            ? ' projects-category-inline-create__input--error'
+                            : ''
+                        }`}
+                        placeholder="Enter new category name..."
+                        value={newCategoryName}
+                        onChange={(e) => {
+                          setNewCategoryName(e.target.value)
+                          if (categoryCreateError) setCategoryCreateError('')
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleSaveCustomCategory()
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault()
+                            handleCancelCustomCategory()
+                          }
+                        }}
+                        disabled={isSavingCategory}
+                        maxLength={100}
+                        aria-label="New category name"
+                      />
+                      <div className="projects-category-inline-create__actions">
+                        <button
+                          type="button"
+                          className="projects-category-btn-save"
+                          onClick={handleSaveCustomCategory}
+                          disabled={isSavingCategory || !newCategoryName.trim()}
+                        >
+                          {isSavingCategory ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          className="projects-category-btn-cancel"
+                          onClick={handleCancelCustomCategory}
+                          disabled={isSavingCategory}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    {categoryCreateError ? (
+                      <p className="projects-form-field__error" role="alert">
+                        {categoryCreateError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 {errors.category ? (
                   <p
                     id={categoryErrorId}
@@ -499,10 +716,41 @@ export function ProjectFormModal({
 
               <div className="projects-form-field">
                 <label
+                  htmlFor="project-form-creation-date"
+                  className="projects-form-field__label"
+                >
+                  Creation Date <span aria-hidden="true">*</span>
+                </label>
+                <DatePicker
+                  id="project-form-creation-date"
+                  name="creationDate"
+                  variant="form"
+                  value={values.creationDate}
+                  onChange={(val) => updateFieldValue('creationDate', val)}
+                  disabled={isSubmitting}
+                  error={Boolean(errors.creationDate)}
+                  placeholder="Select creation date"
+                />
+                {errors.creationDate ? (
+                  <p
+                    id={creationDateErrorId}
+                    className="projects-form-field__error"
+                    role="alert"
+                  >
+                    {errors.creationDate}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="projects-form-field">
+                <label
                   htmlFor="project-form-contract"
                   className="projects-form-field__label"
                 >
-                  Fixed Contract Value <span aria-hidden="true">*</span>
+                  Fixed Contract Value{' '}
+                  <span className="projects-form-field__optional">
+                    (Optional)
+                  </span>
                 </label>
                 <div
                   className={`projects-currency-input${
@@ -525,14 +773,13 @@ export function ProjectFormModal({
                     step="0.01"
                     inputMode="decimal"
                     className="projects-currency-input__field"
-                    placeholder="0.00"
+                    placeholder="0.00 (optional)"
                     value={values.contractValue}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={handleUnsignedNumberKeyDown}
                     onWheel={(event) => event.currentTarget.blur()}
                     disabled={isSubmitting}
-                    required
                     aria-invalid={Boolean(errors.contractValue)}
                     aria-describedby={
                       errors.contractValue ? contractErrorId : undefined

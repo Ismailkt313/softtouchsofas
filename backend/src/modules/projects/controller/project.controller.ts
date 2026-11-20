@@ -22,6 +22,7 @@ import {
   InvalidProjectOperationError,
   ProjectNotFoundError,
 } from '../service/project.service';
+import { DuplicateProjectCategoryError } from '../repository/project.repository';
 
 export { IProjectController };
 
@@ -62,6 +63,7 @@ function redactProjectForCaller(
     lastActivityAt: project.lastActivityAt,
     lastActivityType: project.lastActivityType,
     createdBy: project.createdBy,
+    creationDate: project.creationDate,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };
@@ -79,6 +81,54 @@ function respondProjectAccessDenied(res: Response): void {
 export class ProjectController implements IProjectController {
   private readonly materialConsumption = new ProjectMaterialConsumptionService();
   constructor(private projectService: IProjectService) {}
+
+  listCategories = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const categories = await this.projectService.listCategories();
+      res.status(200).json({ categories });
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  createCategory = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const callerId = req.user?.email || req.user?.id || 'admin';
+      const category = await this.projectService.createCategory(
+        req.body,
+        callerId,
+      );
+
+      res.status(201).json({
+        message: 'Project category created successfully.',
+        category,
+      });
+    } catch (error: unknown) {
+      if (error instanceof DuplicateProjectCategoryError) {
+        res.status(409).json({
+          error: 'Conflict',
+          message: error.message,
+        });
+        return;
+      }
+      if (error instanceof InvalidProjectOperationError) {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: error.message,
+        });
+        return;
+      }
+      next(error);
+    }
+  };
 
   list = async (
     req: AuthenticatedRequest,
@@ -218,7 +268,7 @@ export class ProjectController implements IProjectController {
         typeof rawBody === 'object' &&
         rawBody.contractValue === undefined
       ) {
-        rawBody.contractValue = 0;
+        rawBody.contractValue = null;
       }
 
       const validation = validateCreateProjectDto(rawBody);
@@ -234,7 +284,12 @@ export class ProjectController implements IProjectController {
         return;
       }
 
-      if (!canViewProfitability && validation.value.contractValue > 0) {
+      if (
+        !canViewProfitability &&
+        validation.value.contractValue !== null &&
+        validation.value.contractValue !== undefined &&
+        validation.value.contractValue > 0
+      ) {
         res.status(403).json({
           error: 'Forbidden',
           code: 'PERMISSION_DENIED',

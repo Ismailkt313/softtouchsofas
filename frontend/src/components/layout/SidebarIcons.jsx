@@ -111,6 +111,23 @@ export function SidebarNavIcon({ id, className = '' }) {
           <path d="M7.25 6.5V5.5C7.25 3.98122 8.48122 2.75 10 2.75C11.5188 2.75 12.75 3.98122 12.75 5.5V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       )
+    case 'unpaid-bills':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4.5 3.5C4.5 2.95 4.95 2.5 5.5 2.5H14.5C15.05 2.5 15.5 2.95 15.5 3.5V17.5L13 16.2L10 17.5L7 16.2L4.5 17.5V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M7.5 6.5H12.5M7.5 9.5H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="10" cy="13" r="1.25" fill="currentColor" />
+        </svg>
+      )
+    case 'suppliers':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M2.5 14.5V5.5C2.5 4.95 2.95 4.5 3.5 4.5H11.5C12.05 4.5 12.5 4.95 12.5 5.5V14.5H2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M12.5 8.5H15.5L17.5 11.5V14.5H12.5V8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <circle cx="5.5" cy="15.5" r="1.5" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="14.5" cy="15.5" r="1.5" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      )
     case 'expenses':
       return (
         <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -146,6 +163,43 @@ export function SidebarNavIcon({ id, className = '' }) {
         <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <circle cx="10" cy="6.75" r="3.1" stroke="currentColor" strokeWidth="1.5" />
           <path d="M4.25 16.25C4.85 13.6 7.15 12 10 12C12.85 12 15.15 13.6 15.75 16.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )
+    case 'misc-business-overview':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3 4.5C3 3.67 3.67 3 4.5 3H8.5C9.33 3 10 3.67 10 4.5V8.5C10 9.33 9.33 10 8.5 10H4.5C3.67 10 3 9.33 3 8.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11.5 4.5C11.5 3.67 12.17 3 13 3H15.5C16.33 3 17 3.67 17 4.5V6.5C17 7.33 16.33 8 15.5 8H13C12.17 8 11.5 7.33 11.5 6.5V4.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11.5 11.5C11.5 10.67 12.17 10 13 10H15.5C16.33 10 17 10.67 17 11.5V15.5C17 16.33 16.33 17 15.5 17H13C12.17 17 11.5 16.33 11.5 15.5V11.5Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M3 13.5C3 12.67 3.67 12 4.5 12H8.5C9.33 12 10 12.67 10 13.5V15.5C10 16.33 9.33 17 8.5 17H4.5C3.67 17 3 16.33 3 15.5V13.5Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      )
+    case 'misc-business-sales':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M10 2.5V17.5M13.5 5.5H8.25C7.01 5.5 6 6.51 6 7.75C6 8.99 7.01 10 8.25 10H11.75C12.99 10 14 11.01 14 12.25C14 13.49 12.99 14.5 11.75 14.5H6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'misc-business-purchases':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3.5 5.5H16.5M5.5 5.5V14.5C5.5 15.6 6.4 16.5 7.5 16.5H12.5C13.6 16.5 14.5 15.6 14.5 14.5V5.5M8 3.5H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'misc-business-activities':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3.5 7C3.5 5.9 4.4 5 5.5 5H14.5C15.6 5 16.5 5.9 16.5 7V15C16.5 16.1 15.6 17 14.5 17H5.5C4.4 17 3.5 16.1 3.5 15V7Z" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M7.5 5V3.5C7.5 2.95 7.95 2.5 8.5 2.5H11.5C12.05 2.5 12.5 2.95 12.5 3.5V5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M3.5 10.5H16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      )
+    case 'misc-business-reports':
+      return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3 16.5H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M4.5 13L8 9.5L11 12.5L15.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M12.5 6.5H15.5V9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )
     default:

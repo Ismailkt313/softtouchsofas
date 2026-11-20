@@ -5,10 +5,12 @@ import { hasPermission } from '../../permissions/constants/permissionsCatalog'
 import {
   createProject,
   fetchProjectActivityWarnings,
+  fetchProjectCategories,
   fetchProjectCostAlerts,
   fetchProjects,
   hasActiveAuthToken,
   isAdminUser,
+  PROJECT_CATEGORY_OPTIONS,
   triggerActivityWarningsEvaluation,
   updateProject,
   updateProjectStatus,
@@ -57,6 +59,34 @@ export function useProjectsList({ currentUser }) {
     underReview: 0,
     completed: 0,
   })
+
+  const [categories, setCategories] = useState(PROJECT_CATEGORY_OPTIONS)
+
+  const reloadCategories = useCallback(async () => {
+    try {
+      const list = await fetchProjectCategories()
+      if (Array.isArray(list) && list.length > 0) {
+        setCategories(list)
+      }
+    } catch {
+      // ignore network errors
+    }
+  }, [])
+
+  const addCategoryLocally = useCallback((newCategoryName) => {
+    if (!newCategoryName) return
+    const clean = String(newCategoryName).trim()
+    setCategories((prev) => {
+      if (prev.includes(clean)) return prev
+      return [...prev, clean]
+    })
+  }, [])
+
+  useEffect(() => {
+    if (initialHasToken) {
+      reloadCategories()
+    }
+  }, [initialHasToken, reloadCategories])
 
   const [searchInput, setSearchInput] = useState(values.search)
   const [debouncedSearch, setDebouncedSearch] = useState(values.search)
@@ -540,6 +570,9 @@ export function useProjectsList({ currentUser }) {
     setCurrentPage,
 
     statusCounts,
+    categories,
+    reloadCategories,
+    addCategoryLocally,
     adminAccess,
     canCreateProject,
     canEditProject,

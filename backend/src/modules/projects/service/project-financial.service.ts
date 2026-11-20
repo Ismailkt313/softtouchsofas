@@ -47,14 +47,33 @@ export function roundPercentage(value: number): number {
 export function calculateProjectFinancialMetrics(
   input: ProjectFinancialCalculationInput,
 ): ProjectFinancialMetrics {
-  const safeContractValue = Math.max(0, roundFinancialAmount(input.contractValue));
   const safePurchases = Math.max(0, roundFinancialAmount(input.totalPurchases));
   const safeOtherExpenses = Math.max(
     0,
     roundFinancialAmount(input.totalOtherExpenses),
   );
-
   const totalCost = roundFinancialAmount(safePurchases + safeOtherExpenses);
+
+  const hasContractValue =
+    input.contractValue !== null &&
+    input.contractValue !== undefined &&
+    Number.isFinite(Number(input.contractValue));
+
+  if (!hasContractValue) {
+    return {
+      contractValue: null,
+      totalPurchases: safePurchases,
+      totalOtherExpenses: safeOtherExpenses,
+      totalCost,
+      estimatedProfit: null,
+      costPercentage: null,
+      estimatedProfitMargin: null,
+      profitType: 'estimated',
+      isAudited: false,
+    };
+  }
+
+  const safeContractValue = Math.max(0, roundFinancialAmount(Number(input.contractValue)));
   const estimatedProfit = roundFinancialAmount(safeContractValue - totalCost);
 
   let costPercentage = 0;
@@ -82,7 +101,7 @@ export function calculateProjectFinancialMetrics(
 
 export function evaluateCostThresholdTransitions(params: {
   previousState: IProjectCostThresholdState;
-  contractValue: number;
+  contractValue: number | null | undefined;
   totalCost: number;
   warningThresholdPercent?: number;
   criticalThresholdPercent?: number;
@@ -98,15 +117,21 @@ export function evaluateCostThresholdTransitions(params: {
   let isWarningCurrentlyCrossed = false;
   let isCriticalCurrentlyCrossed = false;
 
-  if (params.contractValue > 0) {
-    const rawRatioPercent = (params.totalCost / params.contractValue) * 100;
+  const validContract =
+    params.contractValue !== null &&
+    params.contractValue !== undefined &&
+    Number.isFinite(params.contractValue) &&
+    params.contractValue > 0;
+
+  if (validContract) {
+    const rawRatioPercent = (params.totalCost / (params.contractValue as number)) * 100;
     isWarningCurrentlyCrossed =
       rawRatioPercent + 1e-9 >= warningThresholdPercent;
     isCriticalCurrentlyCrossed =
       rawRatioPercent + 1e-9 >= criticalThresholdPercent;
   } else {
     isWarningCurrentlyCrossed = false;
-    isCriticalCurrentlyCrossed = params.totalCost > 0;
+    isCriticalCurrentlyCrossed = false;
   }
 
   const triggerWarningAlert =

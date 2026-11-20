@@ -552,6 +552,69 @@ export function evaluateRouteAccess(pathname, user) {
     }
   }
 
+  if (
+    normalized === '/unpaid-bills' ||
+    normalized.startsWith('/unpaid-bills/')
+  ) {
+    const ok = hasPermission(user, 'purchases.view')
+    return {
+      allowed: ok,
+      requiredKeys: ['purchases.view'],
+      moduleTitle: 'Unpaid Bills',
+      reason: ok
+        ? ''
+        : 'Your account does not currently have permission to view unpaid purchase bills.',
+      fallbackPath,
+    }
+  }
+
+  if (normalized === '/suppliers' || normalized.startsWith('/suppliers/')) {
+    const ok = hasPermission(user, 'purchases.view')
+    return {
+      allowed: ok,
+      requiredKeys: ['purchases.view'],
+      moduleTitle: 'Suppliers',
+      reason: ok
+        ? ''
+        : 'Your account does not currently have permission to access supplier management.',
+      fallbackPath,
+    }
+  }
+
+  if (
+    normalized === '/misc-business/reports' ||
+    normalized.startsWith('/misc-business/reports/')
+  ) {
+    const ok = hasPermission(user, 'reports.view')
+    return {
+      allowed: ok,
+      requiredKeys: ['reports.view'],
+      moduleTitle: 'Miscellaneous Business Reports',
+      reason: ok
+        ? ''
+        : 'Confidential miscellaneous business financial reports are restricted to authorized accounts.',
+      fallbackPath,
+    }
+  }
+
+  if (
+    normalized === '/misc-business' ||
+    normalized.startsWith('/misc-business/')
+  ) {
+    const ok =
+      hasPermission(user, 'dashboard.view') ||
+      hasPermission(user, 'purchases.view')
+    return {
+      allowed: ok,
+      requiredKeys: ['dashboard.view'],
+      moduleTitle: 'Miscellaneous Business',
+      reason: ok
+        ? ''
+        : 'Your account does not currently have permission to access Miscellaneous Business.',
+      fallbackPath,
+    }
+  }
+
   if (normalized === '/expenses' || normalized.startsWith('/expenses/')) {
     const ok = hasPermission(user, 'expenses.view')
     return {

@@ -12,8 +12,9 @@ export interface CreateProjectDto {
   category: ProjectCategory;
   status: ProjectStatus;
   description: string;
-  contractValue: number;
+  contractValue: number | null;
   costAlertThresholdPercent: number;
+  creationDate?: Date;
 }
 
 export interface ValidationResult<T> {
@@ -75,13 +76,15 @@ export function validateCreateProjectDto(
 
   let category: ProjectCategory = 'Modular Sofa';
   if (raw.category !== undefined && raw.category !== null && raw.category !== '') {
-    if (
-      typeof raw.category === 'string' &&
-      (PROJECT_CATEGORIES as readonly string[]).includes(raw.category.trim())
-    ) {
-      category = raw.category.trim() as ProjectCategory;
+    if (typeof raw.category === 'string') {
+      const trimmedCategory = raw.category.trim();
+      if (trimmedCategory.length >= 2 && trimmedCategory.length <= 100) {
+        category = trimmedCategory;
+      } else {
+        errors.category = 'Category must be between 2 and 100 characters.';
+      }
     } else {
-      errors.category = `Category must be one of: ${PROJECT_CATEGORIES.join(', ')}.`;
+      errors.category = 'Category must be a string.';
     }
   }
 
@@ -108,7 +111,7 @@ export function validateCreateProjectDto(
     }
   }
 
-  let contractValue = 0;
+  let contractValue: number | null = null;
   if (raw.contractValue !== undefined && raw.contractValue !== null && raw.contractValue !== '') {
     const parsedContractValue =
       typeof raw.contractValue === 'number'
@@ -121,6 +124,38 @@ export function validateCreateProjectDto(
       errors.contractValue = 'Contract value must be a finite number greater than or equal to 0.';
     } else {
       contractValue = Math.round((parsedContractValue + Number.EPSILON) * 100) / 100;
+    }
+  }
+
+  let creationDate: Date | undefined;
+  if (raw.creationDate !== undefined && raw.creationDate !== null && raw.creationDate !== '') {
+    if (raw.creationDate instanceof Date) {
+      if (Number.isNaN(raw.creationDate.getTime())) {
+        errors.creationDate = 'Creation date must be a valid date.';
+      } else {
+        creationDate = raw.creationDate;
+      }
+    } else if (typeof raw.creationDate === 'string') {
+      const trimmed = raw.creationDate.trim();
+      const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) {
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1;
+        const d = parseInt(match[3], 10);
+        creationDate = new Date(Date.UTC(y, m, d, 0, 0, 0, 0));
+        if (Number.isNaN(creationDate.getTime())) {
+          errors.creationDate = 'Creation date must be a valid date.';
+        }
+      } else {
+        const parsed = new Date(trimmed);
+        if (Number.isNaN(parsed.getTime())) {
+          errors.creationDate = 'Creation date must be a valid date.';
+        } else {
+          creationDate = parsed;
+        }
+      }
+    } else {
+      errors.creationDate = 'Creation date must be a valid date.';
     }
   }
 
@@ -168,6 +203,7 @@ export function validateCreateProjectDto(
       description,
       contractValue,
       costAlertThresholdPercent,
+      ...(creationDate ? { creationDate } : {}),
     },
   };
 }

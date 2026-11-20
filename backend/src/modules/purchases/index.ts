@@ -66,6 +66,16 @@ purchaseRouter.post(
   purchaseVoucherController.uploadAttachments,
 );
 purchaseRouter.get(
+  '/unpaid-summary',
+  requirePermission('purchases.view'),
+  purchaseVoucherController.getUnpaidSummary,
+);
+purchaseRouter.patch(
+  '/:id/payment-status',
+  requirePermission('purchases.edit'),
+  purchaseVoucherController.updatePaymentStatus,
+);
+purchaseRouter.get(
   '/:id/attachments/:attachmentId',
   requirePermission('purchases.view'),
   purchaseVoucherController.streamAttachment,

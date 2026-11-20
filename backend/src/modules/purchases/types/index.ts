@@ -88,10 +88,13 @@ export interface IPurchaseVoucher {
   _id?: string | import('mongoose').Types.ObjectId;
   voucherNumber: string;
   purchaseDate: Date;
+  supplierId?: string | import('mongoose').Types.ObjectId | null;
   supplierName: string;
   normalizedSupplierName: string;
   supplierInvoiceNumber: string;
   normalizedInvoiceNumber: string;
+  paymentStatus?: 'Paid' | 'Unpaid';
+  paidAt?: Date | null;
   projectRecordId: string | null;
   projectCode: string | null;
   projectName: string | null;
@@ -184,9 +187,11 @@ export interface PurchaseLineItemInputDto {
 
 export interface CreatePurchaseVoucherDto {
   purchaseDate: Date;
+  supplierId?: string | null;
   supplierName: string;
   supplierInvoiceNumber: string;
   projectId: string | null;
+  paymentStatus?: 'Paid' | 'Unpaid';
   entryMethod: PurchaseEntryMethod;
   lineItems: PurchaseLineItemInputDto[];
   discountAmount: number;
@@ -198,9 +203,11 @@ export interface CreatePurchaseVoucherDto {
 
 export interface UpdatePurchaseVoucherDto {
   purchaseDate?: Date;
+  supplierId?: string | null;
   supplierName?: string;
   supplierInvoiceNumber?: string;
   projectId?: string | null;
+  paymentStatus?: 'Paid' | 'Unpaid';
   entryMethod?: PurchaseEntryMethod;
   lineItems?: PurchaseLineItemInputDto[];
   discountAmount?: number;
@@ -215,6 +222,8 @@ export interface ListPurchaseVouchersDto {
   limit: number;
   search?: string;
   projectId?: string;
+  supplierId?: string;
+  paymentStatus?: 'Paid' | 'Unpaid' | 'all';
   fromDate?: Date;
   toDate?: Date;
   status: 'active' | 'cancelled' | 'all';
@@ -254,11 +263,14 @@ export interface PurchaseVoucherResponseDto {
   id: string;
   voucherNumber: string;
   purchaseDate: Date;
+  supplierId?: string | null;
   supplierName: string;
   supplierInvoiceNumber: string;
   projectRecordId: string | null;
   projectCode: string | null;
   projectName: string | null;
+  paymentStatus: 'Paid' | 'Unpaid';
+  paidAt?: Date | null;
   entryMethod: PurchaseEntryMethod;
   lineItems: IPurchaseLineItem[];
   subtotal: number;
@@ -291,6 +303,12 @@ export interface PurchaseVoucherListSummary {
   withAttachmentCount: number;
 }
 
+export interface UnpaidBillsSummaryDto {
+  totalUnpaidBills: number;
+  totalOutstandingAmount: number;
+  supplierCountWithOutstanding: number;
+}
+
 export interface IPurchaseVoucherRepository {
   generateNextVoucherNumber(): Promise<string>;
   create(
@@ -312,6 +330,12 @@ export interface IPurchaseVoucherRepository {
     },
   ): Promise<PaginatedResult<IPurchaseVoucher>>;
   computeSummaryCounts(): Promise<PurchaseVoucherListSummary>;
+  getUnpaidSummary(): Promise<UnpaidBillsSummaryDto>;
+  updatePaymentStatus(
+    voucherId: string,
+    paymentStatus: 'Paid' | 'Unpaid',
+    user: PurchaseCallerIdentity,
+  ): Promise<IPurchaseVoucher | null>;
   updateByRecordId(
     recordId: string,
     updates: Partial<IPurchaseVoucher>,

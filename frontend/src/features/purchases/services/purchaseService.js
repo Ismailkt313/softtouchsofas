@@ -188,11 +188,14 @@ export function normalizePurchaseVoucher(raw = {}) {
     id: String(raw.id || raw._id || ''),
     voucherNumber: String(raw.voucherNumber || ''),
     purchaseDate: raw.purchaseDate || null,
+    supplierId: raw.supplierId ? String(raw.supplierId) : null,
     supplierName: String(raw.supplierName || ''),
     supplierInvoiceNumber: String(raw.supplierInvoiceNumber || ''),
     projectRecordId: raw.projectRecordId ? String(raw.projectRecordId) : null,
     projectCode: raw.projectCode ? String(raw.projectCode) : null,
     projectName: raw.projectName ? String(raw.projectName) : null,
+    paymentStatus: raw.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid',
+    paidAt: raw.paidAt || null,
     entryMethod: raw.entryMethod === 'upload_bill' ? 'upload_bill' : 'manual',
     lineItems,
     subtotal: roundMoney(raw.subtotal),
@@ -279,6 +282,8 @@ export async function fetchPurchaseVouchers({
   limit = 10,
   search = '',
   projectId = 'all',
+  supplierId = 'all',
+  paymentStatus = 'all',
   fromDate = '',
   toDate = '',
   status = 'active',
@@ -290,6 +295,12 @@ export async function fetchPurchaseVouchers({
     }
     if (projectId && projectId !== 'all') {
       params.projectId = projectId
+    }
+    if (supplierId && supplierId !== 'all') {
+      params.supplierId = supplierId
+    }
+    if (paymentStatus && paymentStatus !== 'all') {
+      params.paymentStatus = paymentStatus
     }
     if (fromDate) {
       params.fromDate = fromDate
@@ -572,5 +583,44 @@ export async function downloadAuthorizedAttachment(
     }, 3000)
   } catch (error) {
     throw extractPurchaseApiError(error, 'Unable to download bill attachment.')
+  }
+}
+
+export async function updatePurchasePaymentStatus(voucherId, paymentStatus) {
+  const cleanId = String(voucherId || '').trim()
+  if (!cleanId) {
+    throw new Error('A valid purchase voucher identifier is required.')
+  }
+  try {
+    const response = await api.patch(
+      `/api/purchases/${encodeURIComponent(cleanId)}/payment-status`,
+      { paymentStatus },
+    )
+    const rawVoucher = response.data?.voucher || response.data
+    return normalizePurchaseVoucher(rawVoucher)
+  } catch (error) {
+    throw extractPurchaseApiError(
+      error,
+      'Unable to update purchase payment status.',
+    )
+  }
+}
+
+export async function fetchUnpaidBillsSummary() {
+  try {
+    const response = await api.get('/api/purchases/unpaid-summary')
+    const data = response.data || {}
+    return {
+      totalUnpaidBills: Number(data.totalUnpaidBills || 0),
+      totalOutstandingAmount: roundMoney(data.totalOutstandingAmount || 0),
+      supplierCountWithOutstanding: Number(
+        data.supplierCountWithOutstanding || 0,
+      ),
+    }
+  } catch (error) {
+    throw extractPurchaseApiError(
+      error,
+      'Unable to load unpaid bills summary.',
+    )
   }
 }

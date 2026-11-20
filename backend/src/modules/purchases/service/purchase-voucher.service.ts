@@ -20,6 +20,10 @@ import {
   RawMaterialUnit,
 } from '../../raw-materials/models/raw-material.model';
 import {
+  SupplierModel,
+  sharedSupplierMemoryStore,
+} from '../../suppliers/models/supplier.model';
+import {
   roundPurchaseMoney,
   roundPurchaseQuantity,
   validateCreatePurchaseVoucherDto,
@@ -55,6 +59,7 @@ import {
   PurchaseStockMovementType,
   PurchaseVoucherListSummary,
   PurchaseVoucherResponseDto,
+  UnpaidBillsSummaryDto,
   UpdatePurchaseVoucherDto,
   UploadedBillInputFile,
 } from '../types';
@@ -278,11 +283,14 @@ export class PurchaseVoucherService {
       id,
       voucherNumber: voucher.voucherNumber,
       purchaseDate: voucher.purchaseDate,
+      supplierId: voucher.supplierId ? String(voucher.supplierId) : null,
       supplierName: voucher.supplierName,
       supplierInvoiceNumber: voucher.supplierInvoiceNumber || '',
       projectRecordId: voucher.projectRecordId || null,
       projectCode: voucher.projectCode || null,
       projectName: voucher.projectName || null,
+      paymentStatus: (voucher.paymentStatus as 'Paid' | 'Unpaid') || 'Unpaid',
+      paidAt: voucher.paidAt || null,
       entryMethod: voucher.entryMethod,
       lineItems: (voucher.lineItems || []).map((item) => ({
         materialId: item.materialId,
@@ -1034,6 +1042,26 @@ export class PurchaseVoucherService {
               let stockApplied = false;
               let desiredAppliedLines: IPurchaseAppliedStockLine[] = [];
 
+              let resolvedSupplierId: string | null = dto.supplierId || null;
+              if (!resolvedSupplierId) {
+                const supDoc = await SupplierModel.findOne({
+                  normalizedName: normalizedSupplierName,
+                })
+                  .lean()
+                  .exec()
+                  .catch(() => null);
+                if (supDoc) {
+                  resolvedSupplierId = String(supDoc._id);
+                } else {
+                  for (const s of sharedSupplierMemoryStore.values()) {
+                    if (s.normalizedName === normalizedSupplierName) {
+                      resolvedSupplierId = String(s._id);
+                      break;
+                    }
+                  }
+                }
+              }
+
               try {
                 for (let attempt = 0; attempt < 4; attempt += 1) {
                   const voucherNumber =
@@ -1042,10 +1070,13 @@ export class PurchaseVoucherService {
                     createdVoucher = await this.repository.create({
                       voucherNumber,
                       purchaseDate: dto.purchaseDate,
+                      supplierId: resolvedSupplierId,
                       supplierName: dto.supplierName,
                       normalizedSupplierName,
                       supplierInvoiceNumber: dto.supplierInvoiceNumber,
                       normalizedInvoiceNumber,
+                      paymentStatus: dto.paymentStatus || 'Unpaid',
+                      paidAt: dto.paymentStatus === 'Paid' ? new Date() : null,
                       projectRecordId: projectRef.projectRecordId,
                       projectCode: projectRef.projectCode,
                       projectName: projectRef.projectName,
@@ -1444,10 +1475,24 @@ export class PurchaseVoucherService {
                       dto.purchaseDate !== undefined
                         ? dto.purchaseDate
                         : existing.purchaseDate,
+                    supplierId:
+                      dto.supplierId !== undefined
+                        ? dto.supplierId
+                        : existing.supplierId,
                     supplierName: nextSupplierName,
                     normalizedSupplierName,
                     supplierInvoiceNumber: nextInvoiceNumber,
                     normalizedInvoiceNumber,
+                    paymentStatus:
+                      dto.paymentStatus !== undefined
+                        ? dto.paymentStatus
+                        : existing.paymentStatus,
+                    paidAt:
+                      dto.paymentStatus !== undefined
+                        ? dto.paymentStatus === 'Paid'
+                          ? new Date()
+                          : null
+                        : existing.paidAt,
                     projectRecordId: projectRef.projectRecordId,
                     projectCode: projectRef.projectCode,
                     projectName: projectRef.projectName,
@@ -1757,5 +1802,38 @@ export class PurchaseVoucherService {
         'Bill attachment file could not be read from storage.',
       );
     }
+  }
+
+  async updatePaymentStatus(
+    identifier: string,
+    paymentStatus: 'Paid' | 'Unpaid',
+    caller: PurchaseCallerIdentity,
+  ): Promise<PurchaseVoucherResponseDto> {
+    if (!['Paid', 'Unpaid'].includes(paymentStatus)) {
+      throw new PurchaseValidationError(
+        { paymentStatus: "Payment status must be 'Paid' or 'Unpaid'." },
+        "Payment status must be 'Paid' or 'Unpaid'.",
+      );
+    }
+
+    const voucher = await this.repository.findByIdOrVoucherNumber(identifier);
+    if (!voucher || !voucher._id) {
+      throw new PurchaseNotFoundError();
+    }
+
+    const updated = await this.repository.updatePaymentStatus(
+      String(voucher._id),
+      paymentStatus,
+      caller,
+    );
+    if (!updated) {
+      throw new PurchaseNotFoundError();
+    }
+
+    return this.toSafePurchaseVoucher(updated);
+  }
+
+  async getUnpaidSummary(): Promise<UnpaidBillsSummaryDto> {
+    return this.repository.getUnpaidSummary();
   }
 }

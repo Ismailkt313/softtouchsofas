@@ -21,6 +21,7 @@ import {
   ProjectCategory,
   ProjectStatus,
 } from '../models/project.model';
+import { IProjectCategory } from '../models/project-category.model';
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -34,8 +35,27 @@ export interface UpdateProjectStatusDto {
   status: ProjectStatus;
 }
 
+export interface ProjectCategoryResponseDto {
+  id: string;
+  name: string;
+  isPredefined: boolean;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface IProjectController {
   list(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void>;
+  listCategories(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  createCategory(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
   getById(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void>;
   create(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void>;
   update(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void>;
@@ -88,13 +108,13 @@ export interface ProjectFinancialSummaryDto {
   name: string;
   clientName: string;
   status: ProjectStatus;
-  contractValue: number;
+  contractValue: number | null;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;
-  estimatedProfit: number;
-  costPercentage: number;
-  estimatedProfitMargin: number;
+  estimatedProfit: number | null;
+  costPercentage: number | null;
+  estimatedProfitMargin: number | null;
   profitType: 'estimated';
   isAudited: false;
   costAlertThresholdPercent: number;
@@ -104,6 +124,7 @@ export interface ProjectFinancialSummaryDto {
     warningThresholdPercent: number;
   };
   financialSummaryUpdatedAt: Date;
+  creationDate?: Date;
 }
 
 export interface ProjectResponseDto {
@@ -115,13 +136,14 @@ export interface ProjectResponseDto {
   status: ProjectStatus;
   description: string;
   materialsUsed: Array<{ materialId: string; materialName: string; unit: string; quantity: number; notes?: string }>;
-  contractValue: number;
+  contractValue: number | null;
+  creationDate?: Date;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;
-  estimatedProfit: number;
-  costPercentage: number;
-  estimatedProfitMargin: number;
+  estimatedProfit: number | null;
+  costPercentage: number | null;
+  estimatedProfitMargin: number | null;
   profitType: 'estimated';
   isAudited: false;
   costAlertThresholdPercent: number;
@@ -187,19 +209,19 @@ export interface ActivityEvaluationSummary {
 }
 
 export interface ProjectFinancialCalculationInput {
-  contractValue: number;
+  contractValue?: number | null;
   totalPurchases: number;
   totalOtherExpenses: number;
 }
 
 export interface ProjectFinancialMetrics {
-  contractValue: number;
+  contractValue: number | null;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;
-  estimatedProfit: number;
-  costPercentage: number;
-  estimatedProfitMargin: number;
+  estimatedProfit: number | null;
+  costPercentage: number | null;
+  estimatedProfitMargin: number | null;
   profitType: 'estimated';
   isAudited: false;
 }
@@ -235,6 +257,11 @@ export interface IProjectService {
     expenseModuleIntegrated: boolean;
     schedulerConfigured: boolean;
   };
+  listCategories(): Promise<ProjectCategoryResponseDto[]>;
+  createCategory(
+    rawBody: unknown,
+    createdBy: string,
+  ): Promise<ProjectCategoryResponseDto>;
   createProject(
     dto: CreateProjectDto,
     createdBy: string,
@@ -292,6 +319,13 @@ export interface IProjectService {
 }
 
 export interface IProjectRepository {
+  listCategories(): Promise<IProjectCategory[]>;
+  findCategoryByNormalizedName(
+    normalizedName: string,
+  ): Promise<IProjectCategory | null>;
+  createCategory(
+    data: Omit<IProjectCategory, '_id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<IProjectCategory>;
   allocateNextProjectCode(): Promise<string>;
   createWithGeneratedCode(
     buildProject: (projectId: string) => Omit<IProject, '_id'>,

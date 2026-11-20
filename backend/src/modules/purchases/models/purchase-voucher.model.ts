@@ -237,6 +237,12 @@ const PurchaseVoucherSchema = new Schema<IPurchaseVoucher>(
       required: true,
       index: true,
     },
+    supplierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Supplier',
+      default: null,
+      index: true,
+    },
     supplierName: {
       type: String,
       required: true,
@@ -249,6 +255,16 @@ const PurchaseVoucherSchema = new Schema<IPurchaseVoucher>(
       lowercase: true,
       trim: true,
       index: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['Paid', 'Unpaid'],
+      default: 'Unpaid',
+      index: true,
+    },
+    paidAt: {
+      type: Date,
+      default: null,
     },
     supplierInvoiceNumber: {
       type: String,

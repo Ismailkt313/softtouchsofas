@@ -12,6 +12,20 @@ export function PurchaseStatusBadge({ status }) {
   )
 }
 
+export function PurchasePaymentStatusBadge({ paymentStatus }) {
+  const isPaid = paymentStatus === 'Paid'
+  return (
+    <span
+      className={`pv-badge ${
+        isPaid ? 'pv-badge--paid' : 'pv-badge--unpaid'
+      }`}
+    >
+      <span className="pv-badge__dot" aria-hidden="true" />
+      {isPaid ? 'Paid' : 'Unpaid'}
+    </span>
+  )
+}
+
 export function PurchaseAttachmentIndicator({ count = 0 }) {
   const safeCount = Number(count) || 0
   if (safeCount <= 0) {

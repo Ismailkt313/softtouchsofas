@@ -96,20 +96,23 @@ function toUtcDateKey(raw: Date | string): string {
 }
 
 export function determineProjectHealthStatus(params: {
-  contractValue: number;
+  contractValue: number | null | undefined;
   totalCost: number;
-  estimatedProfit: number;
-  costPercentage: number;
+  estimatedProfit: number | null | undefined;
+  costPercentage: number | null | undefined;
   warningThresholdPercent: number;
 }): ProjectFinancialHealth {
-  if (params.estimatedProfit < 0) {
+  if (params.contractValue === null || params.contractValue === undefined) {
+    return 'neutral';
+  }
+  if (params.estimatedProfit !== null && params.estimatedProfit !== undefined && params.estimatedProfit < 0) {
     return 'loss';
   }
   if (params.contractValue > 0) {
-    if (params.costPercentage + 1e-9 >= params.warningThresholdPercent) {
+    if (params.costPercentage !== null && params.costPercentage !== undefined && params.costPercentage + 1e-9 >= params.warningThresholdPercent) {
       return 'near_limit';
     }
-    if (params.estimatedProfit > 0) {
+    if (params.estimatedProfit !== null && params.estimatedProfit !== undefined && params.estimatedProfit > 0) {
       return 'profitable';
     }
   }
@@ -189,13 +192,13 @@ export class ReportsService {
           if (diff !== 0) return diff * dir;
         }
       } else if (query.sortBy === 'contractValue') {
-        const diff = a.contractValue - b.contractValue;
+        const diff = (a.contractValue ?? 0) - (b.contractValue ?? 0);
         if (diff !== 0) return diff * dir;
       } else if (query.sortBy === 'totalCost') {
         const diff = a.totalProjectCosts - b.totalProjectCosts;
         if (diff !== 0) return diff * dir;
       } else if (query.sortBy === 'estimatedProfit') {
-        const diff = a.estimatedProfit - b.estimatedProfit;
+        const diff = (a.estimatedProfit ?? 0) - (b.estimatedProfit ?? 0);
         if (diff !== 0) return diff * dir;
       } else {
         const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -223,7 +226,9 @@ export class ReportsService {
     let lossCount = 0;
 
     for (const row of rows) {
-      contractValue = roundFinancialAmount(contractValue + row.contractValue);
+      if (row.contractValue !== null && row.contractValue !== undefined) {
+        contractValue = roundFinancialAmount(contractValue + row.contractValue);
+      }
       materialPurchaseCosts = roundFinancialAmount(
         materialPurchaseCosts + row.materialPurchaseCosts,
       );
@@ -254,15 +259,16 @@ export class ReportsService {
       totalOtherExpenses: lifetimeExpenses,
     });
 
-    const marginApplicable = activeMetrics.contractValue > 0;
+    const marginApplicable =
+      activeMetrics.contractValue !== null && activeMetrics.contractValue > 0;
 
     return {
       projectCount: rows.length,
-      contractValue: activeMetrics.contractValue,
+      contractValue: activeMetrics.contractValue ?? 0,
       materialPurchaseCosts: activeMetrics.totalPurchases,
       otherProjectExpenses: activeMetrics.totalOtherExpenses,
       totalProjectCosts: activeMetrics.totalCost,
-      estimatedProfit: activeMetrics.estimatedProfit,
+      estimatedProfit: activeMetrics.estimatedProfit ?? 0,
       profitMargin: marginApplicable
         ? activeMetrics.estimatedProfitMargin
         : null,
@@ -270,7 +276,7 @@ export class ReportsService {
       costPercentage: marginApplicable ? activeMetrics.costPercentage : null,
       costPercentageApplicable: marginApplicable,
       lifetimeTotalProjectCosts: lifetimeMetrics.totalCost,
-      lifetimeEstimatedProfit: lifetimeMetrics.estimatedProfit,
+      lifetimeEstimatedProfit: lifetimeMetrics.estimatedProfit ?? 0,
       lifetimeProfitMargin: marginApplicable
         ? lifetimeMetrics.estimatedProfitMargin
         : null,
@@ -358,7 +364,8 @@ export class ReportsService {
         totalOtherExpenses: lifetimeExpenses,
       });
 
-      const marginApplicable = activeMetrics.contractValue > 0;
+      const marginApplicable =
+        activeMetrics.contractValue !== null && activeMetrics.contractValue > 0;
       const warningThresholdPercent =
         proj.costAlertThresholdPercent ||
         env.PROJECT_COST_WARNING_THRESHOLD_PERCENT;
@@ -825,7 +832,9 @@ clientContactPersisted: false,
       totalOtherExpenses: periodExpenses,
     });
 
-    const marginApplicable = lifetimeMetrics.contractValue > 0;
+    const marginApplicable =
+      lifetimeMetrics.contractValue !== null &&
+      lifetimeMetrics.contractValue > 0;
     const warningThresholdPercent =
       project.costAlertThresholdPercent ||
       env.PROJECT_COST_WARNING_THRESHOLD_PERCENT;
@@ -857,16 +866,18 @@ clientContactPersisted: false,
         ? roundPercentage((breakdownExpenses / breakdownTotal) * 100)
         : 0;
 
-    const materialPercentOfContract = marginApplicable
-      ? roundPercentage(
-          (breakdownPurchases / lifetimeMetrics.contractValue) * 100,
-        )
-      : null;
-    const expensePercentOfContract = marginApplicable
-      ? roundPercentage(
-          (breakdownExpenses / lifetimeMetrics.contractValue) * 100,
-        )
-      : null;
+    const materialPercentOfContract =
+      marginApplicable && lifetimeMetrics.contractValue !== null
+        ? roundPercentage(
+            (breakdownPurchases / lifetimeMetrics.contractValue) * 100,
+          )
+        : null;
+    const expensePercentOfContract =
+      marginApplicable && lifetimeMetrics.contractValue !== null
+        ? roundPercentage(
+            (breakdownExpenses / lifetimeMetrics.contractValue) * 100,
+          )
+        : null;
 
     const dateWiseCostHistory = this.buildDateWiseCostHistory(
       purchaseHistory,
@@ -887,6 +898,7 @@ clientContactPersisted: false,
         contractValue: lifetimeMetrics.contractValue,
         costAlertThresholdPercent: warningThresholdPercent,
         createdBy: project.createdBy,
+        creationDate: project.creationDate || project.createdAt,
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
         lastActivityAt: project.lastActivityAt,

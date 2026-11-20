@@ -512,9 +512,11 @@ export class DashboardService {
         warningThresholdPercent: warningThreshold,
       });
 
-      totalContractValue = roundFinancialAmount(
-        totalContractValue + metrics.contractValue,
-      );
+      if (metrics.contractValue !== null && metrics.contractValue !== undefined) {
+        totalContractValue = roundFinancialAmount(
+          totalContractValue + metrics.contractValue,
+        );
+      }
       materialPurchaseCosts = roundFinancialAmount(
         materialPurchaseCosts + metrics.totalPurchases,
       );
@@ -526,7 +528,10 @@ export class DashboardService {
       else if (healthStatus === 'near_limit') nearLimitProjectsCount += 1;
       else if (healthStatus === 'profitable') profitableProjectsCount += 1;
 
-      const marginApplicable = metrics.contractValue > 0;
+      const marginApplicable =
+        metrics.contractValue !== null &&
+        metrics.contractValue !== undefined &&
+        metrics.contractValue > 0;
       const encodedCode = encodeURIComponent(proj.projectId);
       const detailPath = canViewReports
         ? `/projects/${encodedCode}/report`
@@ -620,13 +625,13 @@ export class DashboardService {
         const diff = (a.profitMargin ?? 0) - (b.profitMargin ?? 0);
         if (diff !== 0) return diff * dir;
       } else if (query.projectSortBy === 'contractValue') {
-        const diff = a.contractValue - b.contractValue;
+        const diff = (a.contractValue ?? 0) - (b.contractValue ?? 0);
         if (diff !== 0) return diff * dir;
       } else if (query.projectSortBy === 'totalCost') {
         const diff = a.totalProjectCosts - b.totalProjectCosts;
         if (diff !== 0) return diff * dir;
       } else if (query.projectSortBy === 'estimatedProfit') {
-        const diff = a.estimatedProfit - b.estimatedProfit;
+        const diff = (a.estimatedProfit ?? 0) - (b.estimatedProfit ?? 0);
         if (diff !== 0) return diff * dir;
       } else {
         const diff = a.createdAtMs - b.createdAtMs;

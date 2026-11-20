@@ -39,9 +39,12 @@ export function isAdminUser(user) {
 }
 
 export function formatCurrency(value) {
+  if (value === null || value === undefined || value === '') {
+    return '—'
+  }
   const num = Number(value)
   if (!Number.isFinite(num)) {
-    return CURRENCY_FORMATTER.format(0)
+    return '—'
   }
   return CURRENCY_FORMATTER.format(num)
 }
@@ -58,6 +61,27 @@ export function formatProjectDate(dateInput) {
   if (!dateInput) {
     return '—'
   }
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+    const [y, m, d] = dateInput.trim().split('-').map(Number)
+    const local = new Date(y, m - 1, d)
+    return new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(local)
+  }
+  if (typeof dateInput === 'string' && dateInput.includes('T')) {
+    const datePart = dateInput.split('T')[0]
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      const [y, m, d] = datePart.split('-').map(Number)
+      const local = new Date(y, m - 1, d)
+      return new Intl.DateTimeFormat('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).format(local)
+    }
+  }
   const parsed = new Date(dateInput)
   if (Number.isNaN(parsed.getTime())) {
     return '—'
@@ -67,6 +91,41 @@ export function formatProjectDate(dateInput) {
     month: 'short',
     year: 'numeric',
   }).format(parsed)
+}
+
+export function toProjectDateInputValue(value) {
+  if (!value) {
+    const today = new Date()
+    const y = today.getFullYear()
+    const m = String(today.getMonth() + 1).padStart(2, '0')
+    const d = String(today.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return value.trim()
+  }
+
+  if (typeof value === 'string' && value.includes('T')) {
+    const datePart = value.split('T')[0]
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      return datePart
+    }
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    const today = new Date()
+    const y = today.getFullYear()
+    const m = String(today.getMonth() + 1).padStart(2, '0')
+    const d = String(today.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  const y = parsed.getFullYear()
+  const m = String(parsed.getMonth() + 1).padStart(2, '0')
+  const d = String(parsed.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 export function formatProjectDateTime(dateInput) {
@@ -136,17 +195,22 @@ export function normalizeProject(raw = {}) {
       raw.clientContact !== undefined ||
       raw.clientPhone !== undefined ||
       raw.clientEmail !== undefined,
-category: PROJECT_CATEGORY_OPTIONS.includes(raw.category)
-      ? raw.category
-      : 'Modular Sofa',
+    category:
+      typeof raw.category === 'string' && raw.category.trim()
+        ? raw.category.trim()
+        : 'Modular Sofa',
     status: PROJECT_STATUS_OPTIONS.includes(raw.status)
       ? raw.status
       : 'In Progress',
     description: typeof raw.description === 'string' ? raw.description : '',
     materialsUsed: Array.isArray(raw.materialsUsed) ? raw.materialsUsed : [],
-    contractValue: Number.isFinite(Number(raw.contractValue))
-      ? Number(raw.contractValue)
-      : 0,
+    creationDate: raw.creationDate || raw.createdAt || null,
+    contractValue:
+      raw.contractValue !== null &&
+      raw.contractValue !== undefined &&
+      Number.isFinite(Number(raw.contractValue))
+        ? Number(raw.contractValue)
+        : null,
     totalPurchases: Number.isFinite(Number(raw.totalPurchases))
       ? Number(raw.totalPurchases)
       : 0,
@@ -156,15 +220,24 @@ category: PROJECT_CATEGORY_OPTIONS.includes(raw.category)
     totalCost: Number.isFinite(Number(raw.totalCost))
       ? Number(raw.totalCost)
       : 0,
-    estimatedProfit: Number.isFinite(Number(raw.estimatedProfit))
-      ? Number(raw.estimatedProfit)
-      : 0,
-    costPercentage: Number.isFinite(Number(raw.costPercentage))
-      ? Number(raw.costPercentage)
-      : 0,
-    estimatedProfitMargin: Number.isFinite(Number(raw.estimatedProfitMargin))
-      ? Number(raw.estimatedProfitMargin)
-      : 0,
+    estimatedProfit:
+      raw.estimatedProfit !== null &&
+      raw.estimatedProfit !== undefined &&
+      Number.isFinite(Number(raw.estimatedProfit))
+        ? Number(raw.estimatedProfit)
+        : null,
+    costPercentage:
+      raw.costPercentage !== null &&
+      raw.costPercentage !== undefined &&
+      Number.isFinite(Number(raw.costPercentage))
+        ? Number(raw.costPercentage)
+        : null,
+    estimatedProfitMargin:
+      raw.estimatedProfitMargin !== null &&
+      raw.estimatedProfitMargin !== undefined &&
+      Number.isFinite(Number(raw.estimatedProfitMargin))
+        ? Number(raw.estimatedProfitMargin)
+        : null,
     profitType: raw.profitType || 'estimated',
     isAudited: Boolean(raw.isAudited),
     costAlertThresholdPercent:
@@ -201,9 +274,13 @@ export function normalizeFinancialSummary(rawSummary = {}, rawIntegrations = {})
     status: PROJECT_STATUS_OPTIONS.includes(rawSummary.status)
       ? rawSummary.status
       : 'In Progress',
-    contractValue: Number.isFinite(Number(rawSummary.contractValue))
-      ? Number(rawSummary.contractValue)
-      : 0,
+    creationDate: rawSummary.creationDate || rawSummary.createdAt || null,
+    contractValue:
+      rawSummary.contractValue !== null &&
+      rawSummary.contractValue !== undefined &&
+      Number.isFinite(Number(rawSummary.contractValue))
+        ? Number(rawSummary.contractValue)
+        : null,
     totalPurchases: Number.isFinite(Number(rawSummary.totalPurchases))
       ? Number(rawSummary.totalPurchases)
       : 0,
@@ -213,17 +290,24 @@ export function normalizeFinancialSummary(rawSummary = {}, rawIntegrations = {})
     totalCost: Number.isFinite(Number(rawSummary.totalCost))
       ? Number(rawSummary.totalCost)
       : 0,
-    estimatedProfit: Number.isFinite(Number(rawSummary.estimatedProfit))
-      ? Number(rawSummary.estimatedProfit)
-      : 0,
-    costPercentage: Number.isFinite(Number(rawSummary.costPercentage))
-      ? Number(rawSummary.costPercentage)
-      : 0,
-    estimatedProfitMargin: Number.isFinite(
-      Number(rawSummary.estimatedProfitMargin),
-    )
-      ? Number(rawSummary.estimatedProfitMargin)
-      : 0,
+    estimatedProfit:
+      rawSummary.estimatedProfit !== null &&
+      rawSummary.estimatedProfit !== undefined &&
+      Number.isFinite(Number(rawSummary.estimatedProfit))
+        ? Number(rawSummary.estimatedProfit)
+        : null,
+    costPercentage:
+      rawSummary.costPercentage !== null &&
+      rawSummary.costPercentage !== undefined &&
+      Number.isFinite(Number(rawSummary.costPercentage))
+        ? Number(rawSummary.costPercentage)
+        : null,
+    estimatedProfitMargin:
+      rawSummary.estimatedProfitMargin !== null &&
+      rawSummary.estimatedProfitMargin !== undefined &&
+      Number.isFinite(Number(rawSummary.estimatedProfitMargin))
+        ? Number(rawSummary.estimatedProfitMargin)
+        : null,
     profitType: rawSummary.profitType || 'estimated',
     isAudited: Boolean(rawSummary.isAudited),
     costAlertThresholdPercent:
@@ -367,14 +451,38 @@ function buildApiError(error, fallbackMessage) {
   return wrapped
 }
 
+export const wrapProjectApiError = buildApiError
+
 function sanitizeProjectWritePayload(input = {}) {
   const payload = {
     name: String(input.name ?? '').trim(),
     clientName: String(input.clientName ?? '').trim(),
-    category: input.category || PROJECT_CATEGORY_OPTIONS[0],
+    category:
+      typeof input.category === 'string' && input.category.trim()
+        ? input.category.trim()
+        : PROJECT_CATEGORY_OPTIONS[0],
     description:
       typeof input.description === 'string' ? input.description.trim() : '',
-    contractValue: Number(input.contractValue),
+  }
+
+  if (input.contractValue !== undefined) {
+    if (
+      input.contractValue === null ||
+      input.contractValue === '' ||
+      Number.isNaN(Number(input.contractValue))
+    ) {
+      payload.contractValue = null
+    } else {
+      payload.contractValue = Number(input.contractValue)
+    }
+  }
+
+  if (
+    input.creationDate !== undefined &&
+    input.creationDate !== null &&
+    String(input.creationDate).trim() !== ''
+  ) {
+    payload.creationDate = String(input.creationDate).trim()
   }
 
   if (typeof input.status === 'string' && input.status.trim() !== '') {
@@ -390,6 +498,33 @@ function sanitizeProjectWritePayload(input = {}) {
   }
 
   return payload
+}
+
+export async function fetchProjectCategories() {
+  try {
+    const response = await api.get('/api/projects/categories')
+    const rawCategories = response?.data?.categories || response?.data || []
+    if (Array.isArray(rawCategories)) {
+      const mapped = rawCategories.map((c) =>
+        typeof c === 'object' && c?.name ? c.name : String(c).trim(),
+      )
+      const set = new Set([...PROJECT_CATEGORY_OPTIONS, ...mapped])
+      return Array.from(set).filter(Boolean)
+    }
+    return [...PROJECT_CATEGORY_OPTIONS]
+  } catch (err) {
+    return [...PROJECT_CATEGORY_OPTIONS]
+  }
+}
+
+export async function createProjectCategory(name) {
+  try {
+    const cleanName = String(name || '').trim()
+    const response = await api.post('/api/projects/categories', { name: cleanName })
+    return response?.data?.category || response?.data
+  } catch (error) {
+    throw buildApiError(error, 'Failed to create project category.')
+  }
 }
 
 export async function fetchProjects({

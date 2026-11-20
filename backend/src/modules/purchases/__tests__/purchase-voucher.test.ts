@@ -36,6 +36,7 @@ import {
   validateListPurchaseVouchersDto,
   validateUpdatePurchaseVoucherDto,
 } from '../index';
+import { PurchaseVoucherModel } from '../models/purchase-voucher.model';
 
 function buildMinimalPngBuffer(): Buffer {
   return Buffer.from([
@@ -254,6 +255,15 @@ async function runTests(): Promise<void> {
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
+    if (mongoose.connection.readyState === 1) {
+      await PurchaseVoucherModel.deleteMany({
+        supplierInvoiceNumber: { $regex: /^MWV-2026-/ },
+      }).catch(() => null);
+      await PurchaseVoucherModel.deleteMany({
+        clientRequestId: { $regex: /^req-manual-pv-/ },
+      }).catch(() => null);
+    }
+
     console.log('2. Setting up Raw Materials & Projects via real HTTP APIs...');
 
     const unauthRes = await jsonReq(baseUrl, 'GET', '/api/purchases');

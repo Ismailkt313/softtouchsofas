@@ -43,9 +43,11 @@ const IGNORED_CALCULATED_FIELDS = new Set([
 
 const ALLOWED_UPDATE_FIELDS = new Set([
   'purchaseDate',
+  'supplierId',
   'supplierName',
   'supplierInvoiceNumber',
   'projectId',
+  'paymentStatus',
   'entryMethod',
   'lineItems',
   'discountAmount',
@@ -87,6 +89,24 @@ export function validateUpdatePurchaseVoucherDto(
       errors.purchaseDate = 'Purchase date must be a valid date.';
     } else {
       dto.purchaseDate = parsedDate;
+    }
+  }
+
+  if (raw.supplierId !== undefined) {
+    if (raw.supplierId === null || String(raw.supplierId).trim() === '') {
+      dto.supplierId = null;
+    } else if (typeof raw.supplierId !== 'string') {
+      errors.supplierId = 'Supplier identifier must be a string.';
+    } else {
+      dto.supplierId = raw.supplierId.trim();
+    }
+  }
+
+  if (raw.paymentStatus !== undefined) {
+    if (raw.paymentStatus === 'Paid' || raw.paymentStatus === 'Unpaid') {
+      dto.paymentStatus = raw.paymentStatus;
+    } else {
+      errors.paymentStatus = "Payment status must be 'Paid' or 'Unpaid'.";
     }
   }
 

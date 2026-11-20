@@ -24,6 +24,14 @@ import {
   sharedProjectMemoryStore,
 } from '../models/project.model';
 import {
+  DEFAULT_PROJECT_CATEGORIES,
+  IProjectCategory,
+  normalizeProjectCategoryKey,
+  normalizeProjectCategoryName,
+  ProjectCategoryModel,
+  sharedProjectCategoryMemoryStore,
+} from '../models/project-category.model';
+import {
   ListProjectAlertsDto,
   ListProjectsDto,
 } from '../dto/list-projects.dto';
@@ -31,6 +39,13 @@ import {
 import { IProjectRepository, PaginatedResult } from '../types';
 
 export { IProjectRepository, PaginatedResult };
+
+export class DuplicateProjectCategoryError extends Error {
+  constructor(categoryName: string) {
+    super(`Project category '${categoryName}' already exists.`);
+    this.name = 'DuplicateProjectCategoryError';
+  }
+}
 
 export class ProjectPersistenceError extends Error {
   constructor(message: string) {
@@ -43,6 +58,11 @@ export class ProjectPersistenceError extends Error {
 function cloneProject(project: IProject): IProject {
   return {
     ...project,
+    creationDate: project.creationDate
+      ? new Date(project.creationDate)
+      : project.createdAt
+        ? new Date(project.createdAt)
+        : undefined,
     financialSummaryUpdatedAt: new Date(project.financialSummaryUpdatedAt),
     lastActivityAt: new Date(project.lastActivityAt),
     costThresholdState: {
@@ -71,7 +91,10 @@ export class ProjectRepository implements IProjectRepository {
     sharedProjectCostAlertMemoryStore;
   private activityWarningMemory: Map<string, IProjectActivityWarning> =
     sharedProjectActivityWarningMemoryStore;
+  private categoryMemory: Map<string, IProjectCategory> =
+    sharedProjectCategoryMemoryStore;
   private dbFloorSyncPromise: Promise<void> | null = null;
+  private seedCategoriesPromise: Promise<void> | null = null;
   private beforePersistHook: ((project: Omit<IProject, '_id'>) => Promise<void> | void) | null =
     null;
 
@@ -80,7 +103,169 @@ export class ProjectRepository implements IProjectRepository {
     private counterModel: Model<IProjectCounter> = ProjectCounterModel,
     private costAlertModel: Model<IProjectCostAlert> = ProjectCostAlertModel,
     private activityWarningModel: Model<IProjectActivityWarning> = ProjectActivityWarningModel,
+    private categoryModel: Model<IProjectCategory> = ProjectCategoryModel,
   ) {}
+
+  async ensureDefaultCategories(): Promise<void> {
+    if (this.seedCategoriesPromise) {
+      await this.seedCategoriesPromise;
+      return;
+    }
+
+    this.seedCategoriesPromise = (async () => {
+      if (this.isDbConnected()) {
+        try {
+          await this.categoryModel.syncIndexes();
+        } catch {
+          // ignore index errors
+        }
+        for (const name of DEFAULT_PROJECT_CATEGORIES) {
+          const normalizedName = normalizeProjectCategoryKey(name);
+          await this.categoryModel
+            .findOneAndUpdate(
+              { normalizedName },
+              {
+                $setOnInsert: {
+                  name,
+                  normalizedName,
+                  isPredefined: true,
+                  isActive: true,
+                  createdBy: 'system',
+                },
+              },
+              { upsert: true, new: true },
+            )
+            .exec();
+        }
+        return;
+      }
+
+      if (this.categoryMemory.size === 0) {
+        for (const name of DEFAULT_PROJECT_CATEGORIES) {
+          const id = new mongoose.Types.ObjectId().toHexString();
+          const now = new Date();
+          this.categoryMemory.set(id, {
+            _id: id,
+            name,
+            normalizedName: normalizeProjectCategoryKey(name),
+            isPredefined: true,
+            isActive: true,
+            createdBy: 'system',
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+    })().finally(() => {
+      this.seedCategoriesPromise = null;
+    });
+
+    await this.seedCategoriesPromise;
+  }
+
+  async listCategories(): Promise<IProjectCategory[]> {
+    await this.ensureDefaultCategories();
+
+    if (this.isDbConnected()) {
+      const docs = await this.categoryModel
+        .find({ isActive: true })
+        .sort({ isPredefined: -1, createdAt: 1, name: 1 })
+        .lean()
+        .exec();
+      return (docs as unknown as IProjectCategory[]).map((doc) => ({
+        ...doc,
+        _id: String(doc._id),
+      }));
+    }
+
+    const items = Array.from(this.categoryMemory.values()).filter(
+      (cat) => cat.isActive !== false,
+    );
+    items.sort((a, b) => {
+      if (a.isPredefined !== b.isPredefined) {
+        return a.isPredefined ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    return items.map((cat) => ({ ...cat }));
+  }
+
+  async findCategoryByNormalizedName(
+    normalizedName: string,
+  ): Promise<IProjectCategory | null> {
+    await this.ensureDefaultCategories();
+    const cleanKey = normalizeProjectCategoryKey(normalizedName);
+    if (!cleanKey) {
+      return null;
+    }
+
+    if (this.isDbConnected()) {
+      const doc = await this.categoryModel
+        .findOne({ normalizedName: cleanKey })
+        .lean()
+        .exec();
+      if (!doc) {
+        return null;
+      }
+      const typed = doc as unknown as IProjectCategory;
+      return { ...typed, _id: String(typed._id) };
+    }
+
+    for (const cat of this.categoryMemory.values()) {
+      if (cat.normalizedName === cleanKey) {
+        return { ...cat };
+      }
+    }
+    return null;
+  }
+
+  async createCategory(
+    data: Omit<IProjectCategory, '_id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<IProjectCategory> {
+    await this.ensureDefaultCategories();
+    const cleanName = normalizeProjectCategoryName(data.name);
+    const normalizedName = normalizeProjectCategoryKey(cleanName);
+
+    const existing = await this.findCategoryByNormalizedName(normalizedName);
+    if (existing) {
+      throw new DuplicateProjectCategoryError(existing.name);
+    }
+
+    if (this.isDbConnected()) {
+      try {
+        const created = await this.categoryModel.create({
+          name: cleanName,
+          normalizedName,
+          isPredefined: false,
+          isActive: true,
+          createdBy: data.createdBy,
+        });
+        const plain = created.toObject() as unknown as IProjectCategory;
+        return { ...plain, _id: String(created._id) };
+      } catch (err: unknown) {
+        const mongoError = err as { code?: number };
+        if (mongoError?.code === 11000) {
+          throw new DuplicateProjectCategoryError(cleanName);
+        }
+        throw err;
+      }
+    }
+
+    const id = new mongoose.Types.ObjectId().toHexString();
+    const now = new Date();
+    const record: IProjectCategory = {
+      _id: id,
+      name: cleanName,
+      normalizedName,
+      isPredefined: false,
+      isActive: true,
+      createdBy: data.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.categoryMemory.set(id, record);
+    return { ...record };
+  }
 
   setBeforePersistHook(
     hook: ((project: Omit<IProject, '_id'>) => Promise<void> | void) | null,

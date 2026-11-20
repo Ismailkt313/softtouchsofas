@@ -22,7 +22,9 @@ import {
   IPurchaseVoucherRepository,
   ListPurchaseVouchersDto,
   PaginatedResult,
+  PurchaseCallerIdentity,
   PurchaseVoucherListSummary,
+  UnpaidBillsSummaryDto,
 } from '../types';
 
 export class DuplicatePurchaseVoucherError extends Error {
@@ -361,8 +363,8 @@ export class PurchaseVoucherRepository implements IPurchaseVoucherRepository {
       filterUnassignedProject?: boolean;
     },
   ): Promise<PaginatedResult<IPurchaseVoucher>> {
-    const page = Math.max(1, query.page);
-    const limit = Math.min(100, Math.max(1, query.limit));
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
     const skip = (page - 1) * limit;
 
     if (this.isDbConnected()) {
@@ -370,6 +372,25 @@ export class PurchaseVoucherRepository implements IPurchaseVoucherRepository {
 
       if (query.status !== 'all') {
         filter.status = query.status;
+      }
+
+      if (query.paymentStatus && query.paymentStatus !== 'all') {
+        if (query.paymentStatus === 'Unpaid') {
+          filter.paymentStatus = { $ne: 'Paid' };
+        } else {
+          filter.paymentStatus = query.paymentStatus;
+        }
+      }
+
+      if (query.supplierId) {
+        if (mongoose.isValidObjectId(query.supplierId)) {
+          filter.$or = [
+            { supplierId: new mongoose.Types.ObjectId(query.supplierId) },
+            { supplierId: query.supplierId },
+          ];
+        } else {
+          filter.supplierId = query.supplierId;
+        }
       }
 
       if (query.filterUnassignedProject) {
@@ -432,6 +453,21 @@ export class PurchaseVoucherRepository implements IPurchaseVoucherRepository {
 
     if (query.status !== 'all') {
       items = items.filter((v) => v.status === query.status);
+    }
+
+    if (query.paymentStatus && query.paymentStatus !== 'all') {
+      items = items.filter(
+        (v) => (v.paymentStatus || 'Unpaid') === query.paymentStatus,
+      );
+    }
+
+    if (query.supplierId) {
+      const cleanSup = String(query.supplierId).toLowerCase();
+      items = items.filter(
+        (v) =>
+          String(v.supplierId || '').toLowerCase() === cleanSup ||
+          v.normalizedSupplierName === cleanSup,
+      );
     }
 
     if (query.filterUnassignedProject) {
@@ -839,6 +875,91 @@ export class PurchaseVoucherRepository implements IPurchaseVoucherRepository {
     }
 
     return false;
+  }
+
+  async getUnpaidSummary(): Promise<UnpaidBillsSummaryDto> {
+    if (this.isDbConnected()) {
+      const stats = await this.voucherModel.aggregate([
+        { $match: { status: 'active', paymentStatus: { $ne: 'Paid' } } },
+        {
+          $group: {
+            _id: null,
+            totalUnpaidBills: { $sum: 1 },
+            totalOutstandingAmount: { $sum: '$finalTotal' },
+            suppliers: {
+              $addToSet: {
+                $cond: [
+                  { $ifNull: ['$supplierId', false] },
+                  { $toString: '$supplierId' },
+                  '$normalizedSupplierName',
+                ],
+              },
+            },
+          },
+        },
+      ]);
+
+      if (!stats.length) {
+        return {
+          totalUnpaidBills: 0,
+          totalOutstandingAmount: 0,
+          supplierCountWithOutstanding: 0,
+        };
+      }
+
+      return {
+        totalUnpaidBills: stats[0].totalUnpaidBills || 0,
+        totalOutstandingAmount:
+          Math.round(((stats[0].totalOutstandingAmount || 0) + Number.EPSILON) * 100) / 100,
+        supplierCountWithOutstanding: Array.isArray(stats[0].suppliers)
+          ? stats[0].suppliers.filter(Boolean).length
+          : 0,
+      };
+    }
+
+    let totalUnpaidBills = 0;
+    let totalOutstandingAmount = 0;
+    const supplierSet = new Set<string>();
+
+    for (const v of this.voucherMemory.values()) {
+      if (v.status === 'active' && (v.paymentStatus || 'Unpaid') === 'Unpaid') {
+        totalUnpaidBills += 1;
+        totalOutstandingAmount += Number(v.finalTotal || 0);
+        const supKey = v.supplierId ? String(v.supplierId) : v.normalizedSupplierName;
+        if (supKey) supplierSet.add(supKey);
+      }
+    }
+
+    return {
+      totalUnpaidBills,
+      totalOutstandingAmount:
+        Math.round((totalOutstandingAmount + Number.EPSILON) * 100) / 100,
+      supplierCountWithOutstanding: supplierSet.size,
+    };
+  }
+
+  async updatePaymentStatus(
+    voucherId: string,
+    paymentStatus: 'Paid' | 'Unpaid',
+    user: PurchaseCallerIdentity,
+  ): Promise<IPurchaseVoucher | null> {
+    const cleanId = voucherId.trim();
+    if (!cleanId) return null;
+
+    const existing = await this.findByIdOrVoucherNumber(cleanId);
+    if (!existing) return null;
+    const recordId = String(existing._id);
+
+    const now = new Date();
+    const paidAt = paymentStatus === 'Paid' ? now : null;
+
+    return this.updateByRecordId(recordId, {
+      paymentStatus,
+      paidAt,
+      updatedBy: user.id || user.email || 'user',
+      updatedByName: user.name || user.email || 'Workspace User',
+      updatedAt: now,
+    });
   }
 
   async deleteStockMovementsForVoucherRevision(

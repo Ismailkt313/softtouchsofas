@@ -4,6 +4,7 @@ import {
 } from '../services/purchaseService'
 import {
   PurchaseAttachmentIndicator,
+  PurchasePaymentStatusBadge,
   PurchaseStatusBadge,
 } from './PurchaseStatusBadge'
 
@@ -12,6 +13,8 @@ export function PurchasesMobileList({
   canEditVoucher = true,
   onViewVoucher,
   onEditVoucher,
+  onMarkPaid,
+  onViewSupplier,
 }) {
   return (
     <div
@@ -21,6 +24,7 @@ export function PurchasesMobileList({
     >
       {vouchers.map((voucher) => {
         const isCancelled = voucher.status === 'cancelled'
+        const isUnpaid = (voucher.paymentStatus || 'Unpaid') === 'Unpaid'
         return (
           <article
             key={voucher.id}
@@ -42,11 +46,26 @@ export function PurchasesMobileList({
                   {formatPurchaseDate(voucher.purchaseDate)}
                 </span>
               </div>
-              <PurchaseStatusBadge status={voucher.status} />
+              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                <PurchasePaymentStatusBadge paymentStatus={voucher.paymentStatus} />
+                <PurchaseStatusBadge status={voucher.status} />
+              </div>
             </div>
 
             <div className="pv-mobile-card__supplier">
-              <strong>{voucher.supplierName}</strong>
+              {onViewSupplier ? (
+                <button
+                  type="button"
+                  className="pv-supplier-link"
+                  onClick={() =>
+                    onViewSupplier(voucher.supplierId || voucher.supplierName)
+                  }
+                >
+                  {voucher.supplierName}
+                </button>
+              ) : (
+                <strong>{voucher.supplierName}</strong>
+              )}
               {voucher.supplierInvoiceNumber ? (
                 <span>Invoice #{voucher.supplierInvoiceNumber}</span>
               ) : null}
@@ -80,6 +99,15 @@ export function PurchasesMobileList({
               </div>
 
               <div className="pv-row-actions">
+                {!isCancelled && isUnpaid && onMarkPaid ? (
+                  <button
+                    type="button"
+                    className="pv-btn-mark-paid"
+                    onClick={() => onMarkPaid(voucher.id)}
+                  >
+                    Mark Paid
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="pv-action-btn"

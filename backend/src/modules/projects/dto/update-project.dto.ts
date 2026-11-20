@@ -13,8 +13,9 @@ export interface UpdateProjectDto {
   category?: ProjectCategory;
   status?: ProjectStatus;
   description?: string;
-  contractValue?: number;
+  contractValue?: number | null;
   costAlertThresholdPercent?: number;
+  creationDate?: Date;
 }
 
 const FORBIDDEN_MANUAL_ID_KEYS = [
@@ -25,6 +26,8 @@ const FORBIDDEN_MANUAL_ID_KEYS = [
   'code',
   'id',
   '_id',
+  'createdAt',
+  'created_at',
 ] as const;
 
 export function validateUpdateProjectDto(
@@ -45,8 +48,7 @@ export function validateUpdateProjectDto(
 
   for (const key of FORBIDDEN_MANUAL_ID_KEYS) {
     if (raw[key] !== undefined) {
-      errors.projectId =
-        'Project ID is immutable and cannot be modified.';
+      errors[key] = `${key} is immutable and cannot be modified.`;
       break;
     }
   }
@@ -72,13 +74,15 @@ export function validateUpdateProjectDto(
   }
 
   if (raw.category !== undefined) {
-    if (
-      typeof raw.category === 'string' &&
-      (PROJECT_CATEGORIES as readonly string[]).includes(raw.category.trim())
-    ) {
-      updateValue.category = raw.category.trim() as ProjectCategory;
+    if (typeof raw.category === 'string') {
+      const trimmedCategory = raw.category.trim();
+      if (trimmedCategory.length >= 2 && trimmedCategory.length <= 100) {
+        updateValue.category = trimmedCategory;
+      } else {
+        errors.category = 'Category must be between 2 and 100 characters.';
+      }
     } else {
-      errors.category = `Category must be one of: ${PROJECT_CATEGORIES.join(', ')}.`;
+      errors.category = 'Category must be a string.';
     }
   }
 
@@ -102,18 +106,57 @@ export function validateUpdateProjectDto(
   }
 
   if (raw.contractValue !== undefined) {
-    const parsedContractValue =
-      typeof raw.contractValue === 'number'
-        ? raw.contractValue
-        : typeof raw.contractValue === 'string' && raw.contractValue.trim() !== ''
-          ? Number(raw.contractValue)
-          : Number.NaN;
-
-    if (!Number.isFinite(parsedContractValue) || parsedContractValue < 0) {
-      errors.contractValue = 'Contract value must be a finite number greater than or equal to 0.';
+    if (raw.contractValue === null || raw.contractValue === '') {
+      updateValue.contractValue = null;
     } else {
-      updateValue.contractValue =
-        Math.round((parsedContractValue + Number.EPSILON) * 100) / 100;
+      const parsedContractValue =
+        typeof raw.contractValue === 'number'
+          ? raw.contractValue
+          : typeof raw.contractValue === 'string' && raw.contractValue.trim() !== ''
+            ? Number(raw.contractValue)
+            : Number.NaN;
+
+      if (!Number.isFinite(parsedContractValue) || parsedContractValue < 0) {
+        errors.contractValue = 'Contract value must be a finite number greater than or equal to 0.';
+      } else {
+        updateValue.contractValue =
+          Math.round((parsedContractValue + Number.EPSILON) * 100) / 100;
+      }
+    }
+  }
+
+  if (raw.creationDate !== undefined) {
+    if (raw.creationDate === null || raw.creationDate === '') {
+      errors.creationDate = 'Creation date cannot be empty.';
+    } else if (raw.creationDate instanceof Date) {
+      if (Number.isNaN(raw.creationDate.getTime())) {
+        errors.creationDate = 'Creation date must be a valid date.';
+      } else {
+        updateValue.creationDate = raw.creationDate;
+      }
+    } else if (typeof raw.creationDate === 'string') {
+      const trimmed = raw.creationDate.trim();
+      const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) {
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1;
+        const d = parseInt(match[3], 10);
+        const parsed = new Date(Date.UTC(y, m, d, 0, 0, 0, 0));
+        if (Number.isNaN(parsed.getTime())) {
+          errors.creationDate = 'Creation date must be a valid date.';
+        } else {
+          updateValue.creationDate = parsed;
+        }
+      } else {
+        const parsed = new Date(trimmed);
+        if (Number.isNaN(parsed.getTime())) {
+          errors.creationDate = 'Creation date must be a valid date.';
+        } else {
+          updateValue.creationDate = parsed;
+        }
+      }
+    } else {
+      errors.creationDate = 'Creation date must be a valid date.';
     }
   }
 
@@ -144,7 +187,7 @@ export function validateUpdateProjectDto(
     Object.keys(updateValue).length === 0
   ) {
     errors.body =
-      'At least one editable project field (name, clientName, category, status, description, contractValue, or costAlertThresholdPercent) must be provided.';
+      'At least one editable project field (name, clientName, category, status, description, contractValue, costAlertThresholdPercent, or creationDate) must be provided.';
   }
 
   if (Object.keys(errors).length > 0) {

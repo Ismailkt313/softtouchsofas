@@ -7,6 +7,7 @@ import {
 
 export const NAV_GROUPS = [
   { key: 'operations', label: 'Operations' },
+  { key: 'misc-business', label: 'Miscellaneous Business' },
   { key: 'oversight', label: 'Reports & Activity' },
   { key: 'administration', label: 'Administration' },
 ]
@@ -42,6 +43,15 @@ export const WORKSPACE_NAV_ITEMS = [
     mode: 'all',
   },
   {
+    id: 'unpaid-bills',
+    key: 'unpaid-bills',
+    label: 'Unpaid Bills',
+    path: '/unpaid-bills',
+    group: 'operations',
+    requiredPermissions: ['purchases.view'],
+    mode: 'all',
+  },
+  {
     id: 'expenses',
     key: 'expenses',
     label: 'Expenses',
@@ -57,6 +67,60 @@ export const WORKSPACE_NAV_ITEMS = [
     path: '/raw-materials',
     group: 'operations',
     requiredPermissions: ['materials.view'],
+    mode: 'all',
+  },
+  {
+    id: 'suppliers',
+    key: 'suppliers',
+    label: 'Suppliers',
+    path: '/suppliers',
+    group: 'operations',
+    requiredPermissions: ['purchases.view'],
+    mode: 'all',
+  },
+  {
+    id: 'misc-business-overview',
+    key: 'misc-business-overview',
+    label: 'Overview',
+    path: '/misc-business',
+    group: 'misc-business',
+    requiredPermissions: ['dashboard.view'],
+    mode: 'all',
+  },
+  {
+    id: 'misc-business-sales',
+    key: 'misc-business-sales',
+    label: 'Sales',
+    path: '/misc-business/sales',
+    group: 'misc-business',
+    requiredPermissions: ['purchases.view'],
+    mode: 'all',
+  },
+  {
+    id: 'misc-business-purchases',
+    key: 'misc-business-purchases',
+    label: 'Purchases',
+    path: '/misc-business/purchases',
+    group: 'misc-business',
+    requiredPermissions: ['purchases.view'],
+    mode: 'all',
+  },
+  {
+    id: 'misc-business-activities',
+    key: 'misc-business-activities',
+    label: 'Activities',
+    path: '/misc-business/activities',
+    group: 'misc-business',
+    requiredPermissions: ['purchases.view'],
+    mode: 'all',
+  },
+  {
+    id: 'misc-business-reports',
+    key: 'misc-business-reports',
+    label: 'Reports',
+    path: '/misc-business/reports',
+    group: 'misc-business',
+    requiredPermissions: ['reports.view', 'reports.viewProfitability'],
     mode: 'all',
   },
   {
@@ -176,6 +240,10 @@ export function isNavItemActive(pathname = '/', itemPath = '/') {
 
   if (normalizedItem === '/dashboard') {
     return normalizedPath === '/' || normalizedPath === '/dashboard'
+  }
+
+  if (normalizedItem === '/misc-business') {
+    return normalizedPath === '/misc-business'
   }
 
   if (normalizedItem === '/projects') {

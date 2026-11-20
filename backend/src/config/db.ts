@@ -56,6 +56,12 @@ export async function connectDB(): Promise<void> {
             max: 50000,
           }).catch(() => null);
         }
+
+        const collPurchases = db.collection('purchasevouchers');
+        await collPurchases.updateMany(
+          { paymentStatus: { $in: [null, undefined] } },
+          { $set: { paymentStatus: 'Unpaid' } },
+        ).catch(() => null);
       }
 
       await Promise.all(

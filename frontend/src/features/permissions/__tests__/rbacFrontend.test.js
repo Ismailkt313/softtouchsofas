@@ -120,7 +120,12 @@ test('navigationConfig prevents flash before load and separates Admin vs Data En
   assert.ok(adminItems.some((item) => item.path === '/reports'))
 
   const adminGroups = getGroupedVisibleNavItems(adminUser)
-  assert.equal(adminGroups.length, 3)
+  assert.equal(adminGroups.length, 4)
+  assert.ok(adminItems.some((item) => item.path === '/misc-business'))
+  assert.ok(adminItems.some((item) => item.path === '/misc-business/sales'))
+  assert.ok(adminItems.some((item) => item.path === '/misc-business/purchases'))
+  assert.ok(adminItems.some((item) => item.path === '/misc-business/activities'))
+  assert.ok(adminItems.some((item) => item.path === '/misc-business/reports'))
 
   const operatorItems = getVisibleNavItems(operatorUser)
   assert.ok(operatorItems.some((i) => i.path === '/dashboard'))
@@ -158,6 +163,16 @@ test('evaluateRouteAccess blocks unauthorized routes for 403 rendering and allow
     evaluateRouteAccess('/purchases/new', operatorUser).allowed,
     true,
   )
+  assert.equal(evaluateRouteAccess('/unpaid-bills', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/suppliers', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/suppliers/sup_123', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/unpaid-bills', operatorUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/suppliers', operatorUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/misc-business', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/misc-business/sales', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/misc-business/purchases', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/misc-business/activities', adminUser).allowed, true)
+  assert.equal(evaluateRouteAccess('/misc-business/reports', adminUser).allowed, true)
   assert.equal(evaluateRouteAccess('/profile', operatorUser).allowed, true)
   assert.equal(evaluateRouteAccess('/settings', operatorUser).allowed, false)
   assert.equal(evaluateRouteAccess('/settings', adminUser).allowed, false)

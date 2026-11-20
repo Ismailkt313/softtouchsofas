@@ -28,7 +28,20 @@ import {
   PurchaseDetailsPage,
   PurchaseVoucherFormPage,
   PurchasesPage,
+  UnpaidBillsPage,
 } from './features/purchases'
+import {
+  SupplierDetailsPage,
+  SuppliersPage,
+} from './features/suppliers'
+import {
+  MiscOverviewPage,
+  MiscSalesPage,
+  MiscPurchasesPage,
+  MiscActivitiesPage,
+  MiscActivityDetailsPage,
+  MiscReportsPage,
+} from './features/misc-business'
 import { RawMaterialsPage } from './features/raw-materials'
 import { ProjectReportPage, ReportsPage } from './features/reports'
 import { ProfilePage } from './features/profile'
@@ -207,6 +220,12 @@ function App() {
   const isRawMaterialsRoute = isNavItemActive(pathname, '/raw-materials')
   const isExpensesRoute = isNavItemActive(pathname, '/expenses')
   const isPurchasesListRoute = pathname === '/purchases'
+  const isUnpaidBillsRoute = pathname === '/unpaid-bills'
+  const isSuppliersListRoute = pathname === '/suppliers'
+  const supplierDetailsMatch = pathname.match(/^\/suppliers\/([^/]+)$/)
+  const supplierDetailsIdentifier = supplierDetailsMatch
+    ? decodeURIComponent(supplierDetailsMatch[1])
+    : ''
   const isPurchaseCreateRoute = pathname === '/purchases/new'
   const purchaseEditMatch = pathname.match(/^\/purchases\/([^/]+)\/edit$/)
   const purchaseEditIdentifier = purchaseEditMatch
@@ -219,6 +238,18 @@ function App() {
   const purchaseDetailsIdentifier = purchaseDetailsMatch
     ? decodeURIComponent(purchaseDetailsMatch[1])
     : ''
+
+  const isMiscOverviewRoute = pathname === '/misc-business'
+  const isMiscSalesRoute = pathname === '/misc-business/sales'
+  const isMiscPurchasesRoute = pathname === '/misc-business/purchases'
+  const isMiscActivitiesRoute = pathname === '/misc-business/activities'
+  const miscActivityDetailsMatch = pathname.match(
+    /^\/misc-business\/activities\/([^/]+)$/,
+  )
+  const miscActivityDetailsIdentifier = miscActivityDetailsMatch
+    ? decodeURIComponent(miscActivityDetailsMatch[1])
+    : ''
+  const isMiscReportsRoute = pathname === '/misc-business/reports'
 
   const isProtectedWorkspacePath =
     !isLoginRoute &&
@@ -239,6 +270,15 @@ function App() {
       Boolean(purchaseEditIdentifier) ||
       Boolean(purchaseDetailsIdentifier) ||
       isPurchasesListRoute ||
+      isUnpaidBillsRoute ||
+      isSuppliersListRoute ||
+      Boolean(supplierDetailsIdentifier) ||
+      isMiscOverviewRoute ||
+      isMiscSalesRoute ||
+      isMiscPurchasesRoute ||
+      isMiscActivitiesRoute ||
+      Boolean(miscActivityDetailsIdentifier) ||
+      isMiscReportsRoute ||
       Boolean(matchedAdminNav))
 
   useEffect(() => {
@@ -276,8 +316,26 @@ function App() {
       document.title = 'Soft Touch Sofas — Purchase Details'
     } else if (isPurchasesListRoute) {
       document.title = 'Soft Touch Sofas — Purchases'
+    } else if (isUnpaidBillsRoute) {
+      document.title = 'Soft Touch Sofas — Unpaid Bills'
+    } else if (supplierDetailsIdentifier) {
+      document.title = 'Soft Touch Sofas — Supplier Details'
+    } else if (isSuppliersListRoute) {
+      document.title = 'Soft Touch Sofas — Suppliers'
     } else if (isExpensesRoute) {
       document.title = 'Soft Touch Sofas — Expenses'
+    } else if (isMiscOverviewRoute) {
+      document.title = 'Soft Touch Sofas — Miscellaneous Business Overview'
+    } else if (isMiscSalesRoute) {
+      document.title = 'Soft Touch Sofas — Miscellaneous Sales'
+    } else if (isMiscPurchasesRoute) {
+      document.title = 'Soft Touch Sofas — Miscellaneous Purchases'
+    } else if (isMiscActivitiesRoute) {
+      document.title = 'Soft Touch Sofas — Business Activities'
+    } else if (miscActivityDetailsIdentifier) {
+      document.title = 'Soft Touch Sofas — Activity Details'
+    } else if (isMiscReportsRoute) {
+      document.title = 'Soft Touch Sofas — Miscellaneous Financial Reports'
     } else if (matchedAdminNav) {
       document.title = `Soft Touch Sofas — ${matchedAdminNav.label}`
     } else if (isSignupRoute) {
@@ -300,7 +358,16 @@ function App() {
     purchaseEditIdentifier,
     purchaseDetailsIdentifier,
     isPurchasesListRoute,
+    isUnpaidBillsRoute,
+    isSuppliersListRoute,
+    supplierDetailsIdentifier,
     isExpensesRoute,
+    isMiscOverviewRoute,
+    isMiscSalesRoute,
+    isMiscPurchasesRoute,
+    isMiscActivitiesRoute,
+    miscActivityDetailsIdentifier,
+    isMiscReportsRoute,
     matchedAdminNav,
     isSignupRoute,
   ])
@@ -416,6 +483,22 @@ function App() {
                   currentUser={currentUser}
                   onNavigate={navigate}
                 />
+              ) : isUnpaidBillsRoute ? (
+                <UnpaidBillsPage
+                  currentUser={currentUser}
+                  onNavigate={navigate}
+                />
+              ) : supplierDetailsIdentifier ? (
+                <SupplierDetailsPage
+                  key={`sup-${supplierDetailsIdentifier}`}
+                  supplierId={supplierDetailsIdentifier}
+                  onNavigate={navigate}
+                />
+              ) : isSuppliersListRoute ? (
+                <SuppliersPage
+                  currentUser={currentUser}
+                  onNavigate={navigate}
+                />
               ) : isExpensesRoute ? (
                 <ExpensesPage
                   currentUser={currentUser}
@@ -433,6 +516,22 @@ function App() {
                   currentUser={currentUser}
                   onNavigate={navigate}
                 />
+              ) : isMiscOverviewRoute ? (
+                <MiscOverviewPage onNavigate={navigate} />
+              ) : isMiscSalesRoute ? (
+                <MiscSalesPage onNavigate={navigate} />
+              ) : isMiscPurchasesRoute ? (
+                <MiscPurchasesPage onNavigate={navigate} />
+              ) : miscActivityDetailsIdentifier ? (
+                <MiscActivityDetailsPage
+                  key={`mb-act-${miscActivityDetailsIdentifier}`}
+                  activityId={miscActivityDetailsIdentifier}
+                  onNavigate={navigate}
+                />
+              ) : isMiscActivitiesRoute ? (
+                <MiscActivitiesPage onNavigate={navigate} />
+              ) : isMiscReportsRoute ? (
+                <MiscReportsPage onNavigate={navigate} />
               ) : (
                 <AdminPlaceholderPage pathname={pathname} onNavigate={navigate} />
               )}

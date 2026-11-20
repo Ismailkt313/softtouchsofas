@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Dropdown } from '../../../components/common'
 import { fetchStockMovements, submitStockAdjustment } from '../services/stockMovementService'
 import {
   formatMaterialDateTime,
@@ -10,6 +11,29 @@ import {
   RawMaterialCategoryTag,
   RawMaterialStatusBadge,
 } from './RawMaterialStatusBadge'
+
+const ADJUSTMENT_DIRECTION_OPTIONS = [
+  { value: 'increase', label: 'Increase stock' },
+  { value: 'decrease', label: 'Decrease stock' },
+]
+
+const ADJUSTMENT_REASON_OPTIONS = [
+  { value: 'physical_count', label: 'Physical count correction' },
+  { value: 'damaged_material', label: 'Damaged material' },
+  { value: 'supplier_return', label: 'Supplier return' },
+  { value: 'correction', label: 'Inventory correction' },
+  { value: 'other', label: 'Other' },
+]
+
+const MOVEMENT_FILTER_OPTIONS = [
+  { value: '', label: 'All movement types' },
+  { value: 'purchase_created', label: 'Purchase posted' },
+  { value: 'purchase_revised', label: 'Purchase revised' },
+  { value: 'purchase_cancelled', label: 'Purchase cancelled' },
+  { value: 'project_consumption', label: 'Project consumption' },
+  { value: 'stock_adjustment_increase', label: 'Adjustment increase' },
+  { value: 'stock_adjustment_decrease', label: 'Adjustment decrease' },
+]
 
 export function RawMaterialDetailsModal({
   isOpen,
@@ -234,8 +258,146 @@ export function RawMaterialDetailsModal({
                   {material.description || 'No description provided.'}
                 </p>
               </div>
-              {canManageStock ? <section className="rm-stock-adjustment"><h3>Adjust Stock</h3><div className="rm-stock-adjustment__form"><select value={adjustment.direction} onChange={event => setAdjustment(current => ({ ...current, direction: event.target.value }))}><option value="increase">Increase stock</option><option value="decrease">Decrease stock</option></select><input type="number" min="0.001" step="0.001" placeholder={`Quantity (${material.unit})`} value={adjustment.quantity} onChange={event => setAdjustment(current => ({ ...current, quantity: event.target.value }))} /><select value={adjustment.reason} onChange={event => setAdjustment(current => ({ ...current, reason: event.target.value }))}><option value="physical_count">Physical count correction</option><option value="damaged_material">Damaged material</option><option value="supplier_return">Supplier return</option><option value="correction">Inventory correction</option><option value="other">Other</option></select><input maxLength={1000} placeholder="Optional notes" value={adjustment.notes} onChange={event => setAdjustment(current => ({ ...current, notes: event.target.value }))} /><button type="button" className="admin-btn admin-btn--primary" disabled={savingAdjustment} onClick={saveAdjustment}>{savingAdjustment ? 'Saving…' : 'Record adjustment'}</button></div></section> : null}
-              <section className="rm-stock-history"><div className="rm-stock-history__heading"><h3>Stock Movement History</h3><div className="rm-stock-history__filters"><select aria-label="Filter movement type" value={movementType} onChange={event => { setMovementType(event.target.value); setMovementPage(1) }}><option value="">All movement types</option><option value="purchase_created">Purchase posted</option><option value="purchase_revised">Purchase revised</option><option value="purchase_cancelled">Purchase cancelled</option><option value="project_consumption">Project consumption</option><option value="stock_adjustment_increase">Adjustment increase</option><option value="stock_adjustment_decrease">Adjustment decrease</option></select><input aria-label="Movement from date" type="date" value={movementFrom} onChange={event => { setMovementFrom(event.target.value); setMovementPage(1) }} /><input aria-label="Movement to date" type="date" value={movementTo} onChange={event => { setMovementTo(event.target.value); setMovementPage(1) }} /></div></div>{movementError ? <p role="alert">{movementError}</p> : null}{movements.length ? <div className="rm-stock-history__list">{movements.map(item => <article key={item.id}><div><strong>{String(item.movementType).replaceAll('_', ' ')}</strong><small>{formatMaterialDateTime(item.createdAt)} · {item.performedBy}</small><small>{item.reason}{item.projectId ? ` · ${item.projectId}` : ''}{item.voucherNumber ? ` · ${item.voucherNumber}` : ''}</small>{item.notes ? <small>{item.notes}</small> : null}</div><span>{item.previousQuantity} → {item.newQuantity} {material.unit}</span></article>)}</div> : <p>No stock movements recorded.</p>}<div className="rm-stock-history__pagination"><button type="button" className="admin-btn admin-btn--secondary" disabled={movementPage <= 1} onClick={() => setMovementPage(page => Math.max(1, page - 1))}>Previous</button><span>Page {movementPage} of {movementTotalPages}</span><button type="button" className="admin-btn admin-btn--secondary" disabled={movementPage >= movementTotalPages} onClick={() => setMovementPage(page => page + 1)}>Next</button></div></section>
+              {canManageStock ? (
+                <section className="rm-stock-adjustment">
+                  <h3>Adjust Stock</h3>
+                  <div className="rm-stock-adjustment__form">
+                    <Dropdown
+                      id="stock-adj-direction"
+                      name="direction"
+                      variant="form"
+                      value={adjustment.direction}
+                      options={ADJUSTMENT_DIRECTION_OPTIONS}
+                      onChange={(val) =>
+                        setAdjustment((current) => ({ ...current, direction: val }))
+                      }
+                      ariaLabel="Adjustment direction"
+                    />
+                    <input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      placeholder={`Quantity (${material.unit})`}
+                      value={adjustment.quantity}
+                      onChange={(event) =>
+                        setAdjustment((current) => ({ ...current, quantity: event.target.value }))
+                      }
+                    />
+                    <Dropdown
+                      id="stock-adj-reason"
+                      name="reason"
+                      variant="form"
+                      value={adjustment.reason}
+                      options={ADJUSTMENT_REASON_OPTIONS}
+                      onChange={(val) =>
+                        setAdjustment((current) => ({ ...current, reason: val }))
+                      }
+                      ariaLabel="Adjustment reason"
+                    />
+                    <input
+                      maxLength={1000}
+                      placeholder="Optional notes"
+                      value={adjustment.notes}
+                      onChange={(event) =>
+                        setAdjustment((current) => ({ ...current, notes: event.target.value }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary"
+                      disabled={savingAdjustment}
+                      onClick={saveAdjustment}
+                    >
+                      {savingAdjustment ? 'Saving…' : 'Record adjustment'}
+                    </button>
+                  </div>
+                </section>
+              ) : null}
+              <section className="rm-stock-history">
+                <div className="rm-stock-history__heading">
+                  <h3>Stock Movement History</h3>
+                  <div className="rm-stock-history__filters">
+                    <Dropdown
+                      id="stock-history-movement-type"
+                      name="movementType"
+                      variant="filter"
+                      value={movementType}
+                      options={MOVEMENT_FILTER_OPTIONS}
+                      placeholder="All movement types"
+                      onChange={(val) => {
+                        setMovementType(val)
+                        setMovementPage(1)
+                      }}
+                      ariaLabel="Filter movement type"
+                    />
+                    <input
+                      aria-label="Movement from date"
+                      type="date"
+                      value={movementFrom}
+                      onChange={(event) => {
+                        setMovementFrom(event.target.value)
+                        setMovementPage(1)
+                      }}
+                    />
+                    <input
+                      aria-label="Movement to date"
+                      type="date"
+                      value={movementTo}
+                      onChange={(event) => {
+                        setMovementTo(event.target.value)
+                        setMovementPage(1)
+                      }}
+                    />
+                  </div>
+                </div>
+                {movementError ? <p role="alert">{movementError}</p> : null}
+                {movements.length ? (
+                  <div className="rm-stock-history__list">
+                    {movements.map((item) => (
+                      <article key={item.id}>
+                        <div>
+                          <strong>{String(item.movementType).replaceAll('_', ' ')}</strong>
+                          <small>
+                            {formatMaterialDateTime(item.createdAt)} · {item.performedBy}
+                          </small>
+                          <small>
+                            {item.reason}
+                            {item.projectId ? ` · ${item.projectId}` : ''}
+                            {item.voucherNumber ? ` · ${item.voucherNumber}` : ''}
+                          </small>
+                          {item.notes ? <small>{item.notes}</small> : null}
+                        </div>
+                        <span>
+                          {item.previousQuantity} → {item.newQuantity} {material.unit}
+                        </span>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No stock movements recorded.</p>
+                )}
+                <div className="rm-stock-history__pagination">
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--secondary"
+                    disabled={movementPage <= 1}
+                    onClick={() => setMovementPage((page) => Math.max(1, page - 1))}
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {movementPage} of {movementTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--secondary"
+                    disabled={movementPage >= movementTotalPages}
+                    onClick={() => setMovementPage((page) => page + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </section>
             </>
           ) : null}
         </div>

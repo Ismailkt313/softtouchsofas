@@ -7,6 +7,10 @@ import {
   formatMaterialStockOnHand,
   formatMaterialUnit,
 } from '../../raw-materials'
+import {
+  fetchSuppliers,
+  createSupplier,
+} from '../../suppliers/services/supplierService'
 import { BillAttachmentModal } from '../components/BillAttachmentModal'
 import {
   BillLocalPreviewPanel,
@@ -147,15 +151,25 @@ export function PurchaseVoucherFormPage({
 
   const [headerValues, setHeaderValues] = useState(() => ({
     purchaseDate: toInputDateString(),
+    supplierId: '',
     supplierName: '',
     supplierInvoiceNumber: '',
     projectId: '',
+    paymentStatus: 'Unpaid',
     discountAmount: '',
     taxRatePercent: '',
     taxAmount: '',
     otherCharges: '',
     notes: '',
   }))
+  const [suppliersList, setSuppliersList] = useState([])
+  const [isAddingNewSupplier, setIsAddingNewSupplier] = useState(false)
+  const [newSupplierName, setNewSupplierName] = useState('')
+  const [newSupplierPhone, setNewSupplierPhone] = useState('')
+  const [newSupplierContact, setNewSupplierContact] = useState('')
+  const [newSupplierGst, setNewSupplierGst] = useState('')
+  const [supplierCreateError, setSupplierCreateError] = useState('')
+  const [isCreatingSupplier, setIsCreatingSupplier] = useState(false)
   const [taxCalculationMode, setTaxCalculationMode] = useState('manual')
   const [fieldMeta, setFieldMeta] = useState(() =>
     createInitialHeaderFieldMeta(),
@@ -287,6 +301,7 @@ export function PurchaseVoucherFormPage({
     const loadPromises = [
       loadAllCatalogMaterials(adminAccess),
       fetchProjects({ page: 1, limit: 100 }),
+      fetchSuppliers({ page: 1, limit: 100 }),
     ]
 
     if (isEditMode && voucherIdentifier) {
@@ -294,12 +309,13 @@ export function PurchaseVoucherFormPage({
     }
 
     Promise.all(loadPromises)
-      .then(([allMats, projRes, voucherRes]) => {
+      .then(([allMats, projRes, suppliersRes, voucherRes]) => {
         if (cancelled) return
 
         const catalogList = Array.isArray(allMats) ? allMats : []
         const activeMats = catalogList.filter((m) => m.isActive !== false)
         const loadedProjects = projRes?.projects || []
+        setSuppliersList(suppliersRes?.items || [])
 
         if (isEditMode && voucherRes?.voucher) {
           const v = voucherRes.voucher
@@ -311,9 +327,11 @@ export function PurchaseVoucherFormPage({
           setExistingVoucher(v)
           setHeaderValues({
             purchaseDate: toInputDateString(v.purchaseDate),
+            supplierId: v.supplierId || '',
             supplierName: v.supplierName || '',
             supplierInvoiceNumber: v.supplierInvoiceNumber || '',
             projectId: v.projectRecordId || '',
+            paymentStatus: v.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid',
             discountAmount:
               v.discountAmount > 0 ? String(v.discountAmount) : '',
             taxRatePercent: '',
@@ -448,6 +466,65 @@ export function PurchaseVoucherFormPage({
     })
     return [...base, ...mapped]
   }, [projects, existingVoucher])
+
+  const supplierDropdownOptions = useMemo(() => {
+    const list = suppliersList.map((s) => ({
+      value: s.name,
+      label: s.phone ? `${s.name} (${s.phone})` : s.name,
+      id: s.id,
+    }))
+    if (
+      headerValues.supplierName &&
+      !list.some(
+        (opt) =>
+          opt.value.toLowerCase() === headerValues.supplierName.toLowerCase(),
+      )
+    ) {
+      list.unshift({
+        value: headerValues.supplierName,
+        label: headerValues.supplierName,
+        id: headerValues.supplierId || '',
+      })
+    }
+    list.push({
+      value: '__add_new_supplier__',
+      label: '+ Add New Supplier',
+      isCreateAction: true,
+    })
+    return list
+  }, [suppliersList, headerValues.supplierName, headerValues.supplierId])
+
+  const handleSaveNewSupplier = async () => {
+    if (!newSupplierName.trim()) {
+      setSupplierCreateError('Supplier name is required.')
+      return
+    }
+    setIsCreatingSupplier(true)
+    setSupplierCreateError('')
+    try {
+      const created = await createSupplier({
+        name: newSupplierName.trim(),
+        phone: newSupplierPhone.trim(),
+        contactPerson: newSupplierContact.trim(),
+        gstNumber: newSupplierGst.trim(),
+      })
+      setSuppliersList((prev) => [created, ...prev])
+      setHeaderValues((prev) => ({
+        ...prev,
+        supplierName: created.name,
+        supplierId: created.id,
+      }))
+      setIsAddingNewSupplier(false)
+      setNewSupplierName('')
+      setNewSupplierPhone('')
+      setNewSupplierContact('')
+      setNewSupplierGst('')
+    } catch (err) {
+      setSupplierCreateError(err.message || 'Failed to create supplier.')
+    } finally {
+      setIsCreatingSupplier(false)
+    }
+  }
 
   const baseSubtotalPreview = useMemo(
     () =>
@@ -1517,9 +1594,11 @@ export function PurchaseVoucherFormPage({
 
     const payload = {
       purchaseDate: headerValues.purchaseDate,
+      supplierId: headerValues.supplierId || null,
       supplierName: headerValues.supplierName.trim(),
       supplierInvoiceNumber: headerValues.supplierInvoiceNumber.trim(),
       projectId: headerValues.projectId || null,
+      paymentStatus: headerValues.paymentStatus || 'Unpaid',
       entryMethod: resolvedEntryMethod,
       lineItems: lineItems.map((row) =>
         buildVoucherLineItemPayload(row, materialById),
@@ -1838,7 +1917,7 @@ export function PurchaseVoucherFormPage({
                   <div className="pv-form-field">
                     <div className="pv-label-row">
                       <label
-                        htmlFor="pv-supplier-name"
+                        htmlFor="pv-supplier-select"
                         className="pv-form-label"
                       >
                         Supplier name <span className="pv-req">*</span>
@@ -1848,19 +1927,34 @@ export function PurchaseVoucherFormPage({
                         hasValue={Boolean(headerValues.supplierName.trim())}
                       />
                     </div>
-                    <input
-                      id="pv-supplier-name"
-                      type="text"
-                      className={`pv-input${
-                        fieldErrors.supplierName ? ' pv-input--error' : ''
-                      }`}
-                      placeholder="Supplier or vendor name"
+                    <Dropdown
+                      id="pv-supplier-select"
+                      variant="form"
                       value={headerValues.supplierName}
-                      onChange={(e) =>
-                        handleHeaderFieldChange('supplierName', e.target.value)
-                      }
-                      maxLength={200}
+                      options={supplierDropdownOptions}
+                      placeholder="Select or search supplier..."
+                      searchable
+                      error={Boolean(fieldErrors.supplierName)}
                       disabled={isSaving}
+                      onChange={(val) => {
+                        if (val === '__add_new_supplier__') {
+                          setIsAddingNewSupplier(true)
+                          return
+                        }
+                        const found = suppliersList.find(
+                          (s) => s.name === val || s.id === val,
+                        )
+                        handleHeaderFieldChange(
+                          'supplierName',
+                          found ? found.name : val,
+                        )
+                        setHeaderValues((prev) => ({
+                          ...prev,
+                          supplierId: found ? found.id : '',
+                        }))
+                      }}
+                      onCreateOption={() => setIsAddingNewSupplier(true)}
+                      ariaLabel="Supplier name"
                     />
                     {fieldErrors.supplierName ? (
                       <p className="pv-field-error">
@@ -1961,6 +2055,31 @@ export function PurchaseVoucherFormPage({
                     {fieldErrors.projectId ? (
                       <p className="pv-field-error">{fieldErrors.projectId}</p>
                     ) : null}
+                  </div>
+
+                  <div className="pv-form-field">
+                    <div className="pv-label-row">
+                      <label
+                        htmlFor="pv-payment-status"
+                        className="pv-form-label"
+                      >
+                        Payment status
+                      </label>
+                    </div>
+                    <Dropdown
+                      id="pv-payment-status"
+                      variant="form"
+                      value={headerValues.paymentStatus || 'Unpaid'}
+                      options={[
+                        { value: 'Unpaid', label: 'Unpaid (Pending)' },
+                        { value: 'Paid', label: 'Paid' },
+                      ]}
+                      disabled={isSaving}
+                      onChange={(val) =>
+                        handleHeaderFieldChange('paymentStatus', val)
+                      }
+                      ariaLabel="Payment status"
+                    />
                   </div>
                 </div>
               </section>
@@ -2146,6 +2265,104 @@ export function PurchaseVoucherFormPage({
           onConfirm={handleConfirmNewMaterial}
           onSelectExistingOrStaged={handleSelectExistingOrStagedFromModal}
         />
+      ) : null}
+
+      {isAddingNewSupplier ? (
+        <div
+          className="admin-modal-backdrop"
+          style={{ zIndex: 9999 }}
+          role="presentation"
+        >
+          <div
+            className="admin-modal"
+            style={{ maxWidth: '480px', width: '92%' }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="admin-modal__header">
+              <h2 className="admin-modal__title">Add New Supplier</h2>
+            </div>
+            <div
+              className="admin-modal__body"
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}
+            >
+              <div>
+                <label className="pv-form-label" htmlFor="new-sup-name">
+                  Supplier Name <span className="pv-req">*</span>
+                </label>
+                <input
+                  id="new-sup-name"
+                  type="text"
+                  className="pv-input"
+                  placeholder="e.g. Royal Timber & Foams"
+                  value={newSupplierName}
+                  onChange={(e) => setNewSupplierName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="pv-form-label" htmlFor="new-sup-phone">
+                  Phone Number
+                </label>
+                <input
+                  id="new-sup-phone"
+                  type="text"
+                  className="pv-input"
+                  placeholder="+91 9876543210"
+                  value={newSupplierPhone}
+                  onChange={(e) => setNewSupplierPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="pv-form-label" htmlFor="new-sup-contact">
+                  Contact Person
+                </label>
+                <input
+                  id="new-sup-contact"
+                  type="text"
+                  className="pv-input"
+                  placeholder="Contact person name"
+                  value={newSupplierContact}
+                  onChange={(e) => setNewSupplierContact(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="pv-form-label" htmlFor="new-sup-gst">
+                  GST Number (Optional)
+                </label>
+                <input
+                  id="new-sup-gst"
+                  type="text"
+                  className="pv-input"
+                  placeholder="e.g. 32ABCDE1234F1Z5"
+                  value={newSupplierGst}
+                  onChange={(e) => setNewSupplierGst(e.target.value)}
+                />
+              </div>
+              {supplierCreateError ? (
+                <p className="pv-field-error">{supplierCreateError}</p>
+              ) : null}
+            </div>
+            <div className="admin-modal__footer">
+              <button
+                type="button"
+                className="admin-btn admin-btn--secondary"
+                onClick={() => setIsAddingNewSupplier(false)}
+                disabled={isCreatingSupplier}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn--primary"
+                onClick={handleSaveNewSupplier}
+                disabled={isCreatingSupplier}
+              >
+                {isCreatingSupplier ? 'Saving...' : 'Save & Select Supplier'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <TotalMismatchConfirmModal

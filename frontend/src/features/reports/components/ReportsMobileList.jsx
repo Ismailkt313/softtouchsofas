@@ -10,6 +10,14 @@ function getStatusPillClass(status) {
 }
 
 function getProfitClass(estimatedProfit, contractValue) {
+  if (
+    contractValue === null ||
+    contractValue === undefined ||
+    estimatedProfit === null ||
+    estimatedProfit === undefined
+  ) {
+    return 'rep-profit-val--neutral'
+  }
   const numProfit = Number(estimatedProfit || 0)
   const numContract = Number(contractValue || 0)
   if (numContract === 0 && numProfit === 0) return 'rep-profit-val--neutral'
@@ -52,7 +60,7 @@ export function ReportsMobileList({ rows, onOpenProjectReport }) {
               <div>
                 <span className="rep-mobile-metric__label">Contract Value</span>
                 <span className="rep-mobile-metric__val">
-                  {formatReportCurrency(row.contractValue)}
+                  {formatReportCurrency(row.contractValue, '—')}
                 </span>
               </div>
 
@@ -67,7 +75,11 @@ export function ReportsMobileList({ rows, onOpenProjectReport }) {
                 <span className="rep-mobile-metric__label">Estimated Profit</span>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.15rem' }}>
                   <span className={`rep-mobile-metric__val ${profitClass}`}>
-                    {formatReportCurrency(row.estimatedProfit)}
+                    {row.contractValue !== null &&
+                    row.contractValue !== undefined &&
+                    row.estimatedProfit !== null
+                      ? formatReportCurrency(row.estimatedProfit)
+                      : '—'}
                   </span>
                   {isOverBudget ? (
                     <span className="rep-overbudget-badge">Over budget</span>

@@ -213,13 +213,17 @@ export function ProjectDetailsPage({
     )
   }
 
+  const hasContractValue =
+    (financialSummary?.contractValue ?? project?.contractValue) !== null &&
+    (financialSummary?.contractValue ?? project?.contractValue) !== undefined
+
   const authoritativeThresholdState =
     financialSummary?.costThresholdState || project.costThresholdState
   const isCriticalOverrun = Boolean(
-    authoritativeThresholdState?.exceededCrossed,
+    hasContractValue && authoritativeThresholdState?.exceededCrossed,
   )
   const isWarningThreshold = Boolean(
-    authoritativeThresholdState?.warningCrossed,
+    hasContractValue && authoritativeThresholdState?.warningCrossed,
   )
   const warningThresholdPercent =
     authoritativeThresholdState?.warningThresholdPercent ||
@@ -479,6 +483,8 @@ export function ProjectDetailsPage({
 
               <article
                 className={`project-fin-card project-fin-card--highlight${
+                  hasContractValue &&
+                  financialSummary.estimatedProfit !== null &&
                   financialSummary.estimatedProfit < 0
                     ? ' project-fin-card--negative'
                     : ''
@@ -491,10 +497,14 @@ export function ProjectDetailsPage({
                   <span className="project-fin-card__est-pill">Estimate</span>
                 </div>
                 <span className="project-fin-card__value">
-                  {formatCurrency(financialSummary.estimatedProfit)}
+                  {hasContractValue && financialSummary.estimatedProfit !== null
+                    ? formatCurrency(financialSummary.estimatedProfit)
+                    : '—'}
                 </span>
                 <span className="project-fin-card__note">
-                  Contract value minus recorded cost (unaudited)
+                  {hasContractValue
+                    ? 'Contract value minus recorded cost (unaudited)'
+                    : 'Set a contract value to calculate estimated profit'}
                 </span>
               </article>
 
@@ -511,7 +521,10 @@ export function ProjectDetailsPage({
                       Cost %
                     </span>
                     <strong className="project-fin-card__dual-val">
-                      {formatPercentage(financialSummary.costPercentage)}
+                      {hasContractValue &&
+                      financialSummary.costPercentage !== null
+                        ? formatPercentage(financialSummary.costPercentage)
+                        : '—'}
                     </strong>
                   </div>
                   <div className="project-fin-card__divider" aria-hidden="true" />
@@ -521,21 +534,30 @@ export function ProjectDetailsPage({
                     </span>
                     <strong
                       className={`project-fin-card__dual-val${
+                        hasContractValue &&
+                        financialSummary.estimatedProfitMargin !== null &&
                         financialSummary.estimatedProfitMargin < 0
                           ? ' project-fin-card__dual-val--negative'
                           : ''
                       }`}
                     >
-                      {formatPercentage(financialSummary.estimatedProfitMargin)}
+                      {hasContractValue &&
+                      financialSummary.estimatedProfitMargin !== null
+                        ? formatPercentage(
+                            financialSummary.estimatedProfitMargin,
+                          )
+                        : '—'}
                     </strong>
                   </div>
                 </div>
                 <span className="project-fin-card__note">
-                  {financialSummary.contractValue === 0
-                    ? 'Zero contract baseline (0% safe ratio)'
-                    : `Warning threshold set at ${formatPercentage(
-                        warningThresholdPercent,
-                      )}`}
+                  {!hasContractValue
+                    ? 'Contract value not set'
+                    : financialSummary.contractValue === 0
+                      ? 'Zero contract baseline (0% safe ratio)'
+                      : `Warning threshold set at ${formatPercentage(
+                          warningThresholdPercent,
+                        )}`}
                 </span>
               </article>
             </div>
@@ -666,8 +688,14 @@ export function ProjectDetailsPage({
               <dd>{project.createdBy || '—'}</dd>
             </div>
             <div className="project-specs-list__item">
-              <dt>Created On</dt>
-              <dd>{formatProjectDate(project.createdAt)}</dd>
+              <dt>Creation Date</dt>
+              <dd>
+                {formatProjectDate(project.creationDate || project.createdAt)}
+              </dd>
+            </div>
+            <div className="project-specs-list__item">
+              <dt>Record Created</dt>
+              <dd>{formatProjectDateTime(project.createdAt)}</dd>
             </div>
           </dl>
 

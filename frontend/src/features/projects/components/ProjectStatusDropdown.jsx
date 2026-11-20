@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Dropdown } from '../../../components/common'
 import { PROJECT_STATUS_OPTIONS } from '../services/projectService'
 import { fetchRawMaterials } from '../../raw-materials/services/rawMaterialService'
 
@@ -71,6 +72,13 @@ export function ProjectStatusDropdown({
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
   const listboxId = useId()
+
+  const materialOptions = useMemo(() => {
+    return (materials || []).map((item) => ({
+      value: item.id || item._id,
+      label: `${item.name} — ${item.quantityOnHand} ${item.unit} available`,
+    }))
+  }, [materials])
 
   const currentStatus = normalizeCanonicalStatus(project?.status)
   const tone = getStatusToneModifier(currentStatus)
@@ -313,9 +321,23 @@ export function ProjectStatusDropdown({
           <header><h2 id="project-completion-title">Complete {project?.projectId || 'project'}</h2><p>Record materials actually used. Stock will be reduced only after confirmation.</p></header>
           {loadingMaterials ? <p role="status">Loading active materials…</p> : null}
           {completionLines.map((line, index) => {
-            const selected = materials.find(item => item.id === line.materialId)
+            const selected = materials.find(item => item.id === line.materialId || item._id === line.materialId)
             return <div className="project-completion-line" key={index}>
-              <label>Material<select value={line.materialId} onChange={event => updateCompletionLine(index, 'materialId', event.target.value)}><option value="">Select material</option>{materials.map(item => <option key={item.id} value={item.id}>{item.name} — {item.quantityOnHand} {item.unit} available</option>)}</select></label>
+              <div className="project-completion-col">
+                <span className="project-completion-label">Material</span>
+                <Dropdown
+                  id={`completion-material-${index}`}
+                  name={`material-${index}`}
+                  value={line.materialId}
+                  options={materialOptions}
+                  placeholder="Select material"
+                  searchable
+                  searchPlaceholder="Search material..."
+                  onChange={(val) => updateCompletionLine(index, 'materialId', val)}
+                  ariaLabel="Select material"
+                  variant="form"
+                />
+              </div>
               <label>Used ({selected?.unit || 'unit'})<input type="number" min="0.001" step="0.001" value={line.quantity} onChange={event => updateCompletionLine(index, 'quantity', event.target.value)} placeholder="0" /></label>
               <label>Note (optional)<input value={line.notes} maxLength={500} onChange={event => updateCompletionLine(index, 'notes', event.target.value)} placeholder="Optional note" /></label>
               <button type="button" className="admin-btn admin-btn--secondary" onClick={() => setCompletionLines(rows => rows.filter((_, i) => i !== index))} aria-label={`Remove material line ${index + 1}`}>Remove</button>
