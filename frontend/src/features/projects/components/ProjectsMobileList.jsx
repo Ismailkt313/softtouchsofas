@@ -1,4 +1,5 @@
 import { formatCurrency } from '../services/projectService'
+import { ProjectPaymentStatusBadge } from './ProjectPaymentStatusBadge'
 import { ProjectRowActionsMenu } from './ProjectRowActionsMenu'
 import {
   ProjectCostThresholdBadge,
@@ -16,6 +17,7 @@ export function ProjectsMobileList({
   onViewDetails,
   onEdit,
   onStatusChange,
+  onOpenPaymentModal,
 }) {
   return (
     <div
@@ -117,7 +119,25 @@ export function ProjectsMobileList({
                   </dd>
                 </div>
               ) : null}
-              </dl>
+              <div className="project-mobile-card__meta-item">
+                <dt>Payment</dt>
+                <dd>
+                  <ProjectPaymentStatusBadge
+                    status={project.paymentStatus}
+                    contractValueSet={
+                      project.contractValue !== null &&
+                      project.contractValue !== undefined &&
+                      Number(project.contractValue) > 0
+                    }
+                    onClick={
+                      canEditProject && typeof onOpenPaymentModal === 'function'
+                        ? () => onOpenPaymentModal(project)
+                        : null
+                    }
+                  />
+                </dd>
+              </div>
+            </dl>
 
             <div className="project-mobile-card__bottom">
               <button
@@ -143,6 +163,7 @@ export function ProjectsMobileList({
                   onViewDetails={onViewDetails}
                   onEdit={onEdit}
                   onStatusChange={onStatusChange}
+                  onOpenPayment={onOpenPaymentModal}
                   showQuickViewButton={false}
                 />
               ) : null}

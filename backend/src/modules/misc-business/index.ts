@@ -52,13 +52,13 @@ miscBusinessRouter.use(verifyToken);
 // ==========================================
 miscBusinessRouter.get(
   '/overview',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getOverview,
 );
 
 miscBusinessRouter.get(
   '/reports',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'reports.view']),
+  requireAnyPermission(['miscBusiness.reports', 'reports.view']),
   miscBusinessController.getReports,
 );
 
@@ -67,43 +67,43 @@ miscBusinessRouter.get(
 // ==========================================
 miscBusinessRouter.get(
   '/activities/active',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getActiveActivities,
 );
 
 miscBusinessRouter.get(
   '/activities/:id/summary',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getActivitySummary,
 );
 
 miscBusinessRouter.get(
   '/activities/:id',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getActivity,
 );
 
 miscBusinessRouter.get(
   '/activities',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.listActivities,
 );
 
 miscBusinessRouter.post(
   '/activities',
-  requireAnyPermission(['purchases.create', 'expenses.create']),
+  requireAnyPermission(['miscBusiness.create', 'purchases.create', 'expenses.create']),
   miscBusinessController.createActivity,
 );
 
 miscBusinessRouter.put(
   '/activities/:id',
-  requireAnyPermission(['purchases.edit', 'expenses.edit']),
+  requireAnyPermission(['miscBusiness.edit', 'purchases.edit', 'expenses.edit']),
   miscBusinessController.updateActivity,
 );
 
 miscBusinessRouter.delete(
   '/activities/:id',
-  requireAnyPermission(['purchases.delete', 'expenses.delete']),
+  requireAnyPermission(['miscBusiness.delete', 'purchases.delete', 'expenses.delete']),
   miscBusinessController.deleteActivity,
 );
 
@@ -112,37 +112,37 @@ miscBusinessRouter.delete(
 // ==========================================
 miscBusinessRouter.get(
   '/sales/summary',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getSalesSummary,
 );
 
 miscBusinessRouter.get(
   '/sales/:id',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getSale,
 );
 
 miscBusinessRouter.get(
   '/sales',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.listSales,
 );
 
 miscBusinessRouter.post(
   '/sales',
-  requireAnyPermission(['purchases.create', 'expenses.create']),
+  requireAnyPermission(['miscBusiness.create', 'purchases.create', 'expenses.create']),
   miscBusinessController.createSale,
 );
 
 miscBusinessRouter.put(
   '/sales/:id',
-  requireAnyPermission(['purchases.edit', 'expenses.edit']),
+  requireAnyPermission(['miscBusiness.edit', 'purchases.edit', 'expenses.edit']),
   miscBusinessController.updateSale,
 );
 
 miscBusinessRouter.delete(
   '/sales/:id',
-  requireAnyPermission(['purchases.delete', 'expenses.delete']),
+  requireAnyPermission(['miscBusiness.delete', 'purchases.delete', 'expenses.delete']),
   miscBusinessController.deleteSale,
 );
 
@@ -151,37 +151,37 @@ miscBusinessRouter.delete(
 // ==========================================
 miscBusinessRouter.get(
   '/purchases/summary',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getPurchasesSummary,
 );
 
 miscBusinessRouter.get(
   '/purchases/:id',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.getPurchase,
 );
 
 miscBusinessRouter.get(
   '/purchases',
-  requireAnyPermission(['purchases.view', 'expenses.view', 'dashboard.view']),
+  requireAnyPermission(['miscBusiness.view', 'purchases.view', 'expenses.view', 'dashboard.view']),
   miscBusinessController.listPurchases,
 );
 
 miscBusinessRouter.post(
   '/purchases',
-  requireAnyPermission(['purchases.create', 'expenses.create']),
+  requireAnyPermission(['miscBusiness.create', 'purchases.create', 'expenses.create']),
   miscBusinessController.createPurchase,
 );
 
 miscBusinessRouter.put(
   '/purchases/:id',
-  requireAnyPermission(['purchases.edit', 'expenses.edit']),
+  requireAnyPermission(['miscBusiness.edit', 'purchases.edit', 'expenses.edit']),
   miscBusinessController.updatePurchase,
 );
 
 miscBusinessRouter.delete(
   '/purchases/:id',
-  requireAnyPermission(['purchases.delete', 'expenses.delete']),
+  requireAnyPermission(['miscBusiness.delete', 'purchases.delete', 'expenses.delete']),
   miscBusinessController.deletePurchase,
 );
 

@@ -163,6 +163,21 @@ projectRouter.post(
   projectController.recalculateFinancials,
 );
 projectRouter.get(
+  '/:id/payments',
+  requirePermission('projects.view'),
+  projectController.listPayments,
+);
+projectRouter.post(
+  '/:id/payments',
+  requirePermission('projects.edit'),
+  projectController.recordPayment,
+);
+projectRouter.post(
+  '/:id/payments/:paymentId/reverse',
+  requirePermission('projects.edit'),
+  projectController.reversePayment,
+);
+projectRouter.get(
   '/:id/alerts',
   requirePermission('reports.viewProfitability'),
   projectController.getProjectCostAlerts,

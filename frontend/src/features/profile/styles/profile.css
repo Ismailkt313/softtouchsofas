@@ -1,0 +1,648 @@
+/* ==========================================================================
+   Soft Touch Sofas — Profile & Account Management Styles
+   ========================================================================== */
+
+.sts-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Header */
+.sts-profile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sts-profile-header__title {
+  margin: 0;
+  font-family: var(--sts-font-display);
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--sts-charcoal);
+}
+
+.sts-profile-header__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+  color: var(--sts-charcoal-muted);
+}
+
+.sts-profile-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sts-profile-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-color: var(--sts-sand-light);
+  color: var(--sts-walnut);
+  border: 1px solid var(--sts-sand-strong);
+}
+
+.sts-profile-role-pill--admin {
+  background-color: #f7ede2;
+  color: #5c3818;
+  border-color: #dfc19c;
+}
+
+/* Hero / Overview Banner */
+.sts-profile-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #faf6f0 100%);
+  border: 1px solid var(--sts-sand);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  box-shadow: 0 4px 20px rgba(36, 24, 16, 0.04);
+}
+
+.sts-profile-hero__left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.sts-profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sts-profile-avatar {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #4a3525, #241810);
+  border: 3px solid var(--sts-sand);
+  box-shadow: 0 4px 14px rgba(36, 24, 16, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #faf7f2;
+  font-family: var(--sts-font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  user-select: none;
+}
+
+.sts-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sts-profile-status-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.sts-profile-hero__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sts-profile-hero__name {
+  margin: 0;
+  font-family: var(--sts-font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--sts-charcoal);
+  letter-spacing: -0.015em;
+}
+
+.sts-profile-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  color: var(--sts-charcoal-muted);
+}
+
+.sts-profile-hero__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sts-profile-hero__meta-item svg {
+  width: 15px;
+  height: 15px;
+  color: var(--sts-taupe);
+  flex-shrink: 0;
+}
+
+.sts-profile-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sts-profile-hero__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10b981;
+}
+
+/* Feedback Alert Banner */
+.sts-profile-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.89rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: stsProfileFadeIn 0.25s ease;
+}
+
+@keyframes stsProfileFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sts-profile-banner--success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #14532d;
+}
+
+.sts-profile-banner--error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.sts-profile-banner__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sts-profile-banner__text {
+  flex: 1;
+}
+
+.sts-profile-banner__close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.2rem;
+  opacity: 0.65;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.sts-profile-banner__close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Main Grid Layout */
+.sts-profile-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Profile Card */
+.sts-profile-card {
+  background-color: #ffffff;
+  border: 1px solid var(--sts-sand);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(36, 24, 16, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sts-profile-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sts-sand-light);
+}
+
+.sts-profile-card__icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: var(--sts-sand-light);
+  border: 1px solid var(--sts-sand-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sts-walnut);
+  flex-shrink: 0;
+}
+
+.sts-profile-card__icon-box svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sts-profile-card__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sts-profile-card__title {
+  margin: 0;
+  font-family: var(--sts-font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--sts-charcoal);
+  letter-spacing: -0.01em;
+}
+
+.sts-profile-card__desc {
+  margin: 0;
+  font-size: 0.835rem;
+  color: var(--sts-taupe);
+}
+
+/* Form Styles */
+.sts-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sts-profile-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.15rem;
+}
+
+.sts-profile-field--full {
+  grid-column: 1 / -1;
+}
+
+.sts-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sts-profile-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--sts-charcoal);
+  user-select: none;
+}
+
+.sts-profile-label__tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--sts-taupe);
+}
+
+.sts-profile-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sts-profile-input-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 17px;
+  height: 17px;
+  color: var(--sts-taupe);
+  pointer-events: none;
+}
+
+.sts-profile-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--sts-sand-strong);
+  background-color: #ffffff;
+  color: var(--sts-charcoal);
+  font-family: var(--sts-font-sans);
+  font-size: 0.92rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.sts-profile-input--with-icon {
+  padding-left: 2.45rem;
+}
+
+.sts-profile-input:hover:not(:disabled) {
+  border-color: #b3a08d;
+}
+
+.sts-profile-input:focus {
+  outline: none;
+  border-color: var(--sts-walnut);
+  box-shadow: 0 0 0 3px rgba(74, 53, 37, 0.12);
+  background-color: #ffffff;
+}
+
+.sts-profile-input:disabled {
+  background-color: #f7f3ee;
+  border-color: #e4dad0;
+  color: var(--sts-taupe);
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.sts-profile-input-lock {
+  position: absolute;
+  right: 0.85rem;
+  width: 15px;
+  height: 15px;
+  color: var(--sts-taupe);
+  pointer-events: none;
+}
+
+.sts-profile-hint {
+  font-size: 0.775rem;
+  color: var(--sts-taupe);
+  line-height: 1.35;
+}
+
+/* Card Actions / Footer */
+.sts-profile-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sts-sand-light);
+  flex-wrap: wrap;
+}
+
+.sts-profile-unsaved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #b45309;
+  background-color: #fef3c7;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #fde68a;
+}
+
+.sts-profile-form-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+/* Access & Role Box */
+.sts-profile-role-box {
+  background: linear-gradient(135deg, #fdfaf6 0%, #f6eee3 100%);
+  border: 1px solid #e5d6c3;
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sts-profile-role-box__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sts-profile-role-box__title {
+  font-family: var(--sts-font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--sts-charcoal);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sts-profile-role-box__title svg {
+  width: 18px;
+  height: 18px;
+  color: var(--sts-walnut);
+}
+
+.sts-profile-role-box__desc {
+  margin: 0;
+  font-size: 0.835rem;
+  line-height: 1.45;
+  color: var(--sts-charcoal-muted);
+}
+
+/* Capabilities Pills */
+.sts-profile-caps-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sts-profile-caps-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sts-taupe);
+}
+
+.sts-profile-caps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sts-profile-cap-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 7px;
+  background-color: var(--sts-sand-light);
+  border: 1px solid var(--sts-sand);
+  color: var(--sts-walnut);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.sts-profile-cap-tag--accent {
+  background-color: #f7ede2;
+  border-color: #e5cdb4;
+  color: #54381e;
+}
+
+.sts-profile-cap-tag svg {
+  width: 13px;
+  height: 13px;
+  color: #15803d;
+}
+
+/* Security Note & Admin Shortcuts */
+.sts-profile-security-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border-radius: 10px;
+  background-color: #faf8f5;
+  border: 1px solid #ebe2d6;
+  font-size: 0.81rem;
+  color: var(--sts-charcoal-muted);
+  line-height: 1.45;
+}
+
+.sts-profile-security-box svg {
+  width: 18px;
+  height: 18px;
+  color: var(--sts-walnut);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sts-profile-admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sts-profile-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 9px;
+  border: 1px solid var(--sts-sand);
+  background-color: #ffffff;
+  color: var(--sts-charcoal);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.sts-profile-link-btn:hover {
+  background-color: var(--sts-sand-light);
+  border-color: var(--sts-sand-strong);
+  color: var(--sts-walnut-deep);
+}
+
+.sts-profile-link-btn svg {
+  width: 16px;
+  height: 16px;
+  color: var(--sts-taupe);
+  transition: transform 0.15s ease;
+}
+
+.sts-profile-link-btn:hover svg {
+  transform: translateX(3px);
+  color: var(--sts-walnut);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .sts-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sts-profile-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.35rem 1.25rem;
+  }
+
+  .sts-profile-hero__left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .sts-profile-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sts-profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sts-profile-header__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sts-profile-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sts-profile-form-buttons {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .sts-profile-form-buttons button {
+    flex: 1;
+  }
+}

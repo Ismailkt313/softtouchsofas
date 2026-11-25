@@ -480,6 +480,13 @@ export class DashboardService {
     let nearLimitProjectsCount = 0;
     let overBudgetProjectsCount = 0;
 
+    let clientPaymentsContractValue = 0;
+    let clientPaymentsTotalReceived = 0;
+    let clientPaymentsTotalOutstanding = 0;
+    let clientUnpaidCount = 0;
+    let clientPartialCount = 0;
+    let clientPaidCount = 0;
+
     const allPerformanceRows: Array<
       DashboardProjectPerformanceRowDto & { createdAtMs: number }
     > = [];
@@ -489,6 +496,47 @@ export class DashboardService {
       if (proj.status === 'In Progress') inProgressProjects += 1;
       else if (proj.status === 'Under Review') underReviewProjects += 1;
       else if (proj.status === 'Completed') completedProjects += 1;
+
+      // Client Payment Metrics
+      const isEligibleForPayment = String(proj.status).toLowerCase() !== 'cancelled';
+      if (isEligibleForPayment) {
+        const pCv =
+          proj.contractValue !== null &&
+          proj.contractValue !== undefined &&
+          Number(proj.contractValue) > 0
+            ? Number(proj.contractValue)
+            : 0;
+        const pReceived = Number(proj.totalReceived) || 0;
+        const pStatus =
+          proj.paymentStatus ||
+          (pReceived > 0
+            ? pCv > 0 && pReceived >= pCv
+              ? 'Fully Paid'
+              : 'Partially Paid'
+            : 'Unpaid');
+
+        clientPaymentsContractValue = roundFinancialAmount(
+          clientPaymentsContractValue + pCv,
+        );
+        clientPaymentsTotalReceived = roundFinancialAmount(
+          clientPaymentsTotalReceived + pReceived,
+        );
+
+        if (pCv > 0) {
+          const pOutstanding = Math.max(0, roundFinancialAmount(pCv - pReceived));
+          clientPaymentsTotalOutstanding = roundFinancialAmount(
+            clientPaymentsTotalOutstanding + pOutstanding,
+          );
+        }
+
+        if (pStatus === 'Fully Paid') {
+          clientPaidCount += 1;
+        } else if (pStatus === 'Partially Paid') {
+          clientPartialCount += 1;
+        } else {
+          clientUnpaidCount += 1;
+        }
+      }
 
       const bucket = totalsMap.get(recId);
       const pCost = roundFinancialAmount(bucket?.lifetimePurchases ?? 0);
@@ -594,6 +642,14 @@ export class DashboardService {
       overBudgetProjectsCount,
       profitType: 'estimated',
       isAudited: false,
+      clientPayments: {
+        totalContractValue: clientPaymentsContractValue,
+        totalReceived: clientPaymentsTotalReceived,
+        totalOutstanding: clientPaymentsTotalOutstanding,
+        unpaidProjectsCount: clientUnpaidCount,
+        partiallyPaidProjectsCount: clientPartialCount,
+        fullyPaidProjectsCount: clientPaidCount,
+      },
     };
 
     let filteredRows = allPerformanceRows;

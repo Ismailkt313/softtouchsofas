@@ -1,4 +1,6 @@
 import { env } from '../../../config/env';
+import { roundFinancialAmount } from './project-financial.service';
+import { projectPaymentService } from './project-payment.service';
 import { CreateProjectDto } from '../dto/create-project.dto';
 import { validateCreateProjectCategoryDto } from '../dto/project-category.dto';
 import {
@@ -71,6 +73,30 @@ function mapProjectResponse(project: IProject): ProjectResponseDto {
     totalOtherExpenses: project.totalOtherExpenses,
   });
 
+  const totalReceived = project.totalReceived ?? 0;
+  const hasCv =
+    metrics.contractValue !== null &&
+    metrics.contractValue !== undefined &&
+    metrics.contractValue > 0;
+  const outstandingBalance = hasCv
+    ? project.outstandingBalance !== undefined &&
+      project.outstandingBalance !== null
+      ? project.outstandingBalance
+      : Math.max(0, roundFinancialAmount(metrics.contractValue! - totalReceived))
+    : null;
+  const paymentStatus =
+    project.paymentStatus ||
+    (totalReceived > 0
+      ? hasCv && totalReceived >= metrics.contractValue!
+        ? 'Fully Paid'
+        : 'Partially Paid'
+      : 'Unpaid');
+  const excessPayment =
+    project.excessPayment ??
+    (hasCv && totalReceived > metrics.contractValue!
+      ? roundFinancialAmount(totalReceived - metrics.contractValue!)
+      : 0);
+
   return {
     id: String(project._id),
     projectId: project.projectId,
@@ -81,6 +107,11 @@ function mapProjectResponse(project: IProject): ProjectResponseDto {
     description: project.description || '',
     materialsUsed: (project.materialsUsed || []).map((line) => ({ ...line })),
     contractValue: metrics.contractValue,
+    totalReceived,
+    outstandingBalance,
+    paymentStatus,
+    excessPayment,
+    lastPaymentDate: project.lastPaymentDate ?? null,
     creationDate: project.creationDate || project.createdAt,
     totalPurchases: metrics.totalPurchases,
     totalOtherExpenses: metrics.totalOtherExpenses,
@@ -550,6 +581,15 @@ export class ProjectService implements IProjectService {
 
       if (!updated) {
         throw new ProjectNotFoundError(identifier);
+      }
+
+      if (dto.contractValue !== undefined) {
+        const paymentSummary = await projectPaymentService.recalculateAndPersistProjectSummary(updated);
+        updated.totalReceived = paymentSummary.totalReceived;
+        updated.outstandingBalance = paymentSummary.outstandingBalance;
+        updated.paymentStatus = paymentSummary.paymentStatus;
+        updated.excessPayment = paymentSummary.excessPayment;
+        updated.lastPaymentDate = paymentSummary.lastPaymentDate;
       }
 
       return mapProjectResponse(updated);

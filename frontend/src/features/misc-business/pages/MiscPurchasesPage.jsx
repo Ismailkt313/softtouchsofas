@@ -6,10 +6,20 @@ import { MiscPurchasesTable } from '../components/MiscPurchasesTable';
 import { MiscPurchasesMobileList } from '../components/MiscPurchasesMobileList';
 import { PurchaseFormModal } from '../components/PurchaseFormModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
-import { Pagination } from '../../../components/common/Pagination';
+import { Dropdown, DatePicker, Pagination } from '../../../components/common';
 import '../styles/misc-business.css';
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const PAYMENT_METHOD_FILTER_OPTIONS = [
+  { value: '', label: 'All Payment Methods' },
+  { value: 'Cash', label: 'Cash' },
+  { value: 'Bank Transfer', label: 'Bank Transfer' },
+  { value: 'UPI', label: 'UPI' },
+  { value: 'Cheque', label: 'Cheque' },
+  { value: 'Card', label: 'Card' },
+  { value: 'Other', label: 'Other' },
+];
 
 export function MiscPurchasesPage({ onNavigate }) {
   const [purchases, setPurchases] = useState([]);
@@ -192,59 +202,56 @@ export function MiscPurchasesPage({ onNavigate }) {
             }}
           />
 
-          <select
-            className="mb-select"
+          <Dropdown
+            variant="filter"
             value={activityId}
-            onChange={(e) => {
-              setActivityId(e.target.value);
+            options={[
+              { value: '', label: 'All Activities' },
+              ...activities.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+            onChange={(val) => {
+              setActivityId(val);
               setPage(1);
             }}
-          >
-            <option value="">All Activities</option>
-            {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="mb-select"
-            value={paymentMethod}
-            onChange={(e) => {
-              setPaymentMethod(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">All Payment Methods</option>
-            <option value="Cash">Cash</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="UPI">UPI</option>
-            <option value="Cheque">Cheque</option>
-            <option value="Card">Card</option>
-            <option value="Other">Other</option>
-          </select>
-
-          <input
-            type="date"
-            className="mb-date-input"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-            title="From date"
+            placeholder="All Activities"
+            searchable
+            searchPlaceholder="Search activity..."
           />
-          <span style={{ color: 'var(--sts-taupe)', fontSize: '0.85rem' }}>to</span>
-          <input
-            type="date"
-            className="mb-date-input"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
+
+          <Dropdown
+            variant="filter"
+            value={paymentMethod}
+            options={PAYMENT_METHOD_FILTER_OPTIONS}
+            onChange={(val) => {
+              setPaymentMethod(val);
               setPage(1);
             }}
-            title="To date"
+            placeholder="All Payment Methods"
+          />
+
+          <DatePicker
+            variant="filter"
+            prefix="From"
+            value={startDate}
+            onChange={(val) => {
+              setStartDate(val);
+              setPage(1);
+            }}
+            maxDate={endDate || undefined}
+            placeholder="From date"
+            ariaLabel="Filter from date"
+          />
+          <DatePicker
+            variant="filter"
+            prefix="To"
+            value={endDate}
+            onChange={(val) => {
+              setEndDate(val);
+              setPage(1);
+            }}
+            minDate={startDate || undefined}
+            placeholder="To date"
+            ariaLabel="Filter to date"
           />
         </div>
 

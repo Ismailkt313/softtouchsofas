@@ -98,6 +98,57 @@ export function DashboardKpiGrid({ kpis, isAdmin, onNavigate }) {
       </a>
 
       <a
+        href="/projects"
+        className="sts-dash-kpi-card sts-dash-kpi-card--payments"
+        onClick={(e) => handleCardLink(e, '/projects')}
+      >
+        <div className="sts-dash-kpi-card__top">
+          <span className="sts-dash-kpi-card__label">
+            Outstanding Client Payments
+          </span>
+          <span
+            className="sts-dash-kpi-card__icon sts-dash-kpi-card__icon--amber"
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 20 20" fill="none">
+              <rect
+                x="3"
+                y="5"
+                width="14"
+                height="10"
+                rx="2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <path d="M3 9H17" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="6.5" cy="12" r="1" fill="currentColor" />
+            </svg>
+          </span>
+        </div>
+
+        <div className="sts-dash-kpi-card__value">
+          {formatDashboardCurrency(kpis.clientPayments?.totalOutstanding ?? 0)}
+        </div>
+
+        <div className="sts-dash-kpi-card__pills">
+          <span className="sts-dash-pill sts-dash-pill--danger">
+            {kpis.clientPayments?.unpaidProjectsCount ?? 0} Unpaid
+          </span>
+          <span className="sts-dash-pill sts-dash-pill--warning">
+            {kpis.clientPayments?.partiallyPaidProjectsCount ?? 0} Partial
+          </span>
+          <span className="sts-dash-pill sts-dash-pill--completed">
+            {kpis.clientPayments?.fullyPaidProjectsCount ?? 0} Paid
+          </span>
+        </div>
+
+        <p className="sts-dash-kpi-card__meta">
+          Received {formatDashboardCurrency(kpis.clientPayments?.totalReceived ?? 0)} of{' '}
+          {formatDashboardCurrency(kpis.clientPayments?.totalContractValue ?? 0)}
+        </p>
+      </a>
+
+      <a
         href={costTargetRoute}
         className="sts-dash-kpi-card sts-dash-kpi-card--costs"
         onClick={(e) => handleCardLink(e, costTargetRoute)}

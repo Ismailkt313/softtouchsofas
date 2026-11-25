@@ -1,15 +1,20 @@
+import { useState } from 'react'
 import { Toast } from '../../../components/common'
 import { ProjectAutomationBanners } from '../components/ProjectAutomationBanners'
 import { ProjectFormModal } from '../components/ProjectFormModal'
+import { ProjectPaymentModal } from '../components/ProjectPaymentModal'
 import { ProjectsFiltersBar } from '../components/ProjectsFiltersBar'
 import { ProjectsMobileList } from '../components/ProjectsMobileList'
 import { Pagination } from '../../../components/common/Pagination'
 import { ProjectsSummaryStrip } from '../components/ProjectsSummaryStrip'
 import { ProjectsTable } from '../components/ProjectsTable'
 import { useProjectsList } from '../hooks/useProjectsList'
+import { formatCurrency } from '../services/projectService'
 import '../styles/projects.css'
 
 export function ProjectsPage({ currentUser, onNavigate }) {
+  const [selectedPaymentProject, setSelectedPaymentProject] = useState(null)
+  const [paymentToast, setPaymentToast] = useState(null)
   const {
     projects,
     totalProjects,
@@ -43,6 +48,7 @@ export function ProjectsPage({ currentUser, onNavigate }) {
     authRequired,
     error,
     reloadProjects,
+    updateProjectLocally,
 
     automationState,
     activeWarningByProjectCode,
@@ -71,6 +77,36 @@ export function ProjectsPage({ currentUser, onNavigate }) {
       return
     }
     onNavigate?.(`/projects/${encodeURIComponent(projectIdentifier)}`)
+  }
+
+  const handleOpenPaymentModal = (project) => {
+    setSelectedPaymentProject(project)
+  }
+
+  const handleClosePaymentModal = () => {
+    setSelectedPaymentProject(null)
+  }
+
+  const handlePaymentSuccess = (updatedSummary, newPayment) => {
+    if (selectedPaymentProject && updatedSummary) {
+      updateProjectLocally(
+        selectedPaymentProject.projectId || selectedPaymentProject.id,
+        {
+          totalReceived: updatedSummary.totalReceived,
+          outstandingBalance: updatedSummary.outstandingBalance,
+          paymentStatus: updatedSummary.paymentStatus,
+          excessPayment: updatedSummary.excessPayment,
+          lastPaymentDate: updatedSummary.lastPaymentDate,
+        },
+      )
+    }
+    setPaymentToast({
+      text: `Payment ${newPayment?.paymentReference || ''} of ${formatCurrency(
+        newPayment?.amount,
+      )} recorded successfully for ${selectedPaymentProject?.name || 'project'}.`,
+      tone: 'success',
+    })
+    reloadProjects()
   }
 
   return (
@@ -115,6 +151,14 @@ export function ProjectsPage({ currentUser, onNavigate }) {
               : undefined
           }
           onClose={clearFeedbackBanner}
+        />
+      ) : null}
+
+      {paymentToast ? (
+        <Toast
+          message={paymentToast.text}
+          tone={paymentToast.tone || 'success'}
+          onClose={() => setPaymentToast(null)}
         />
       ) : null}
 
@@ -320,6 +364,7 @@ export function ProjectsPage({ currentUser, onNavigate }) {
                   onViewDetails={handleViewProject}
                   onEdit={canEditProject ? openEditModal : null}
                   onStatusChange={canEditProject ? handleStatusSubmit : null}
+                  onOpenPaymentModal={canEditProject ? handleOpenPaymentModal : null}
                 />
 
                 <ProjectsMobileList
@@ -331,6 +376,7 @@ export function ProjectsPage({ currentUser, onNavigate }) {
                   onViewDetails={handleViewProject}
                   onEdit={canEditProject ? openEditModal : null}
                   onStatusChange={canEditProject ? handleStatusSubmit : null}
+                  onOpenPaymentModal={canEditProject ? handleOpenPaymentModal : null}
                 />
 
                 <Pagination
@@ -348,6 +394,16 @@ export function ProjectsPage({ currentUser, onNavigate }) {
           </section>
         </>
       )}
+
+      {selectedPaymentProject ? (
+        <ProjectPaymentModal
+          key={`payment-modal-${selectedPaymentProject.id || selectedPaymentProject.projectId}`}
+          isOpen
+          project={selectedPaymentProject}
+          onClose={handleClosePaymentModal}
+          onSuccess={handlePaymentSuccess}
+        />
+      ) : null}
 
       {isCreateModalOpen ? (
         <ProjectFormModal

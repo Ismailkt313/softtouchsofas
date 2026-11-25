@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  requireAnyPermission,
   requirePermission,
   verifyToken,
 } from '../../middleware/auth';
@@ -67,12 +68,12 @@ purchaseRouter.post(
 );
 purchaseRouter.get(
   '/unpaid-summary',
-  requirePermission('purchases.view'),
+  requireAnyPermission(['unpaidBills.view', 'purchases.view']),
   purchaseVoucherController.getUnpaidSummary,
 );
 purchaseRouter.patch(
   '/:id/payment-status',
-  requirePermission('purchases.edit'),
+  requireAnyPermission(['unpaidBills.pay', 'purchases.edit']),
   purchaseVoucherController.updatePaymentStatus,
 );
 purchaseRouter.get(

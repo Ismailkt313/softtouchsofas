@@ -24,6 +24,20 @@ export const PERMISSION_KEYS = [
   'activity.viewOwn',
   'activity.viewAll',
   'permissions.manage',
+  // Suppliers Module
+  'suppliers.view',
+  'suppliers.create',
+  'suppliers.edit',
+  'suppliers.delete',
+  // Unpaid Bills Module
+  'unpaidBills.view',
+  'unpaidBills.pay',
+  // Miscellaneous Business Module
+  'miscBusiness.view',
+  'miscBusiness.create',
+  'miscBusiness.edit',
+  'miscBusiness.delete',
+  'miscBusiness.reports',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -55,6 +69,14 @@ export const DEFAULT_DATA_ENTRY_PERMISSIONS: readonly PermissionKey[] =
     'expenses.create',
     'materials.view',
     'activity.viewOwn',
+    'suppliers.view',
+    'suppliers.create',
+    'suppliers.edit',
+    'unpaidBills.view',
+    'unpaidBills.pay',
+    'miscBusiness.view',
+    'miscBusiness.create',
+    'miscBusiness.edit',
   ]);
 
 export const PERMISSION_DEPENDENCIES: Readonly<
@@ -77,6 +99,14 @@ export const PERMISSION_DEPENDENCIES: Readonly<
   'users.manage': ['users.view'],
   'users.approve': ['users.view'],
   'activity.viewAll': ['activity.viewOwn'],
+  'suppliers.create': ['suppliers.view'],
+  'suppliers.edit': ['suppliers.view'],
+  'suppliers.delete': ['suppliers.view'],
+  'unpaidBills.pay': ['unpaidBills.view'],
+  'miscBusiness.create': ['miscBusiness.view'],
+  'miscBusiness.edit': ['miscBusiness.view'],
+  'miscBusiness.delete': ['miscBusiness.view'],
+  'miscBusiness.reports': ['miscBusiness.view'],
 });
 
 export interface PermissionDefinitionMeta {
@@ -186,6 +216,68 @@ export const PERMISSION_MATRIX_MODULES: readonly PermissionModuleGroupMeta[] =
       ],
     },
     {
+      moduleId: 'unpaid-bills',
+      moduleLabel: 'Unpaid Bills',
+      description:
+        'Outstanding procurement vouchers, unpaid balance metrics, and bill settlement.',
+      navPath: '/unpaid-bills',
+      permissions: [
+        {
+          key: 'unpaidBills.view',
+          label: 'View Unpaid Bills',
+          description:
+            'Browse unpaid purchase vouchers and outstanding credit summaries.',
+          category: 'view',
+        },
+        {
+          key: 'unpaidBills.pay',
+          label: 'Mark Bills as Paid',
+          description:
+            'Update purchase voucher payment status from unpaid to paid.',
+          category: 'edit',
+          requires: ['unpaidBills.view'],
+        },
+      ],
+    },
+    {
+      moduleId: 'suppliers',
+      moduleLabel: 'Suppliers Management',
+      description:
+        'Vendor directory, supplier contact profiles, and procurement histories.',
+      navPath: '/suppliers',
+      permissions: [
+        {
+          key: 'suppliers.view',
+          label: 'View Suppliers',
+          description:
+            'Browse supplier records, contact persons, phone numbers, and purchase balances.',
+          category: 'view',
+        },
+        {
+          key: 'suppliers.create',
+          label: 'Create Suppliers',
+          description: 'Register new material suppliers in the vendor directory.',
+          category: 'create',
+          requires: ['suppliers.view'],
+        },
+        {
+          key: 'suppliers.edit',
+          label: 'Edit Suppliers',
+          description:
+            'Update supplier profiles, contact numbers, and payment details.',
+          category: 'edit',
+          requires: ['suppliers.view'],
+        },
+        {
+          key: 'suppliers.delete',
+          label: 'Delete Suppliers',
+          description: 'Deactivate or delete supplier accounts from the system.',
+          category: 'delete',
+          requires: ['suppliers.view'],
+        },
+      ],
+    },
+    {
       moduleId: 'expenses',
       moduleLabel: 'Expenses',
       description: 'Daily workshop, transport, labour, and project expenses.',
@@ -278,6 +370,54 @@ export const PERMISSION_MATRIX_MODULES: readonly PermissionModuleGroupMeta[] =
             'Access confidential contract values, company-wide profit KPIs, and project margins.',
           category: 'special',
           requires: ['reports.view', 'projects.view'],
+        },
+      ],
+    },
+    {
+      moduleId: 'misc-business',
+      moduleLabel: 'Miscellaneous Business',
+      description:
+        'Secondary business lines, external revenue, operating expenses, and margin reports.',
+      navPath: '/misc-business',
+      permissions: [
+        {
+          key: 'miscBusiness.view',
+          label: 'View Miscellaneous Business',
+          description:
+            'Access secondary business overview, activities list, and transactions.',
+          category: 'view',
+        },
+        {
+          key: 'miscBusiness.create',
+          label: 'Create Activities & Entries',
+          description:
+            'Register new business activities and record secondary sales or purchases.',
+          category: 'create',
+          requires: ['miscBusiness.view'],
+        },
+        {
+          key: 'miscBusiness.edit',
+          label: 'Edit Activities & Entries',
+          description:
+            'Modify secondary business activities, sales records, and purchase expenses.',
+          category: 'edit',
+          requires: ['miscBusiness.view'],
+        },
+        {
+          key: 'miscBusiness.delete',
+          label: 'Delete / Void Misc Records',
+          description:
+            'Void secondary transactions or delete inactive business activities.',
+          category: 'delete',
+          requires: ['miscBusiness.view'],
+        },
+        {
+          key: 'miscBusiness.reports',
+          label: 'View Miscellaneous Reports',
+          description:
+            'Access confidential secondary activity financial statements and profit margins.',
+          category: 'special',
+          requires: ['miscBusiness.view'],
         },
       ],
     },

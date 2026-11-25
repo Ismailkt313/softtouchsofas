@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import miscBusinessService from '../services/miscBusinessService';
+import { Dropdown } from '../../../components/common';
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
 
 export function ActivityFormModal({
   isOpen,
@@ -147,14 +153,13 @@ export function ActivityFormModal({
             {activity ? (
               <div className="mb-form-group">
                 <label className="mb-form-label">Status</label>
-                <select
-                  className="mb-form-select"
+                <Dropdown
+                  variant="form"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  options={STATUS_OPTIONS}
+                  onChange={setStatus}
+                  placeholder="Select status"
+                />
               </div>
             ) : null}
           </div>

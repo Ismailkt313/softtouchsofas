@@ -20,9 +20,9 @@ import {
   togglePermissionWithDependencies,
 } from '../constants/permissionsCatalog.js'
 
-test('permissionsCatalog defines all 25 canonical keys and safe role defaults', () => {
-  assert.equal(ALL_PERMISSION_KEYS.length, 25)
-  assert.equal(DEFAULT_ADMIN_PERMISSIONS.length, 25)
+test('permissionsCatalog defines all 36 canonical keys and safe role defaults', () => {
+  assert.equal(ALL_PERMISSION_KEYS.length, 36)
+  assert.equal(DEFAULT_ADMIN_PERMISSIONS.length, 36)
 
   for (const reserved of ADMIN_RESERVED_PERMISSIONS) {
     assert.equal(

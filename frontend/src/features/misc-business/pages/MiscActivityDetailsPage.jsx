@@ -11,7 +11,7 @@ import { ActivityFormModal } from '../components/ActivityFormModal';
 import { SaleFormModal } from '../components/SaleFormModal';
 import { PurchaseFormModal } from '../components/PurchaseFormModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
-import { Pagination } from '../../../components/common/Pagination';
+import { DatePicker, Pagination } from '../../../components/common';
 import '../styles/misc-business.css';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -199,21 +199,23 @@ export function MiscActivityDetailsPage({ activityId, onNavigate }) {
       {/* Date Range Filter */}
       <div className="mb-filters-bar">
         <div className="mb-filters-bar__left">
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--sts-charcoal)' }}>
-            Filter by Date:
-          </span>
-          <input
-            type="date"
-            className="mb-date-input"
+          <DatePicker
+            variant="filter"
+            prefix="From"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={setStartDate}
+            maxDate={endDate || undefined}
+            placeholder="From date"
+            ariaLabel="Filter from date"
           />
-          <span style={{ color: 'var(--sts-taupe)', fontSize: '0.85rem' }}>to</span>
-          <input
-            type="date"
-            className="mb-date-input"
+          <DatePicker
+            variant="filter"
+            prefix="To"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={setEndDate}
+            minDate={startDate || undefined}
+            placeholder="To date"
+            ariaLabel="Filter to date"
           />
         </div>
 

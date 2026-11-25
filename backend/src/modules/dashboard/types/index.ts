@@ -39,6 +39,15 @@ export interface DashboardMonthlyExpensesQueryDto {
   toDateStr: string | null;
 }
 
+export interface DashboardClientPaymentsKpiDto {
+  totalContractValue: number;
+  totalReceived: number;
+  totalOutstanding: number;
+  unpaidProjectsCount: number;
+  partiallyPaidProjectsCount: number;
+  fullyPaidProjectsCount: number;
+}
+
 export interface DashboardKpiSummaryDto {
   totalProjects: number;
   activeProjects: number;
@@ -58,6 +67,7 @@ export interface DashboardKpiSummaryDto {
   overBudgetProjectsCount: number;
   profitType: 'estimated';
   isAudited: false;
+  clientPayments?: DashboardClientPaymentsKpiDto;
 }
 
 export interface DashboardProjectPerformanceRowDto {

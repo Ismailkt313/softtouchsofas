@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import miscBusinessService, {
   formatCurrency,
 } from '../services/miscBusinessService';
-import { Pagination } from '../../../components/common/Pagination';
+import { Dropdown, DatePicker, Pagination } from '../../../components/common';
 import '../styles/misc-business.css';
 
 export function MiscReportsPage({ onNavigate }) {
@@ -95,42 +95,45 @@ export function MiscReportsPage({ onNavigate }) {
       {/* Filter Bar */}
       <div className="mb-filters-bar">
         <div className="mb-filters-bar__left">
-          <select
-            className="mb-select"
+          <Dropdown
+            variant="filter"
             value={activityId}
-            onChange={(e) => {
-              setActivityId(e.target.value);
+            options={[
+              { value: '', label: 'All Business Activities' },
+              ...activities.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+            onChange={(val) => {
+              setActivityId(val);
               setPage(1);
             }}
-          >
-            <option value="">All Business Activities</option>
-            {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="date"
-            className="mb-date-input"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-            title="Start date"
+            placeholder="All Business Activities"
+            searchable
+            searchPlaceholder="Search activity..."
           />
-          <span style={{ color: 'var(--sts-taupe)', fontSize: '0.85rem' }}>to</span>
-          <input
-            type="date"
-            className="mb-date-input"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
+
+          <DatePicker
+            variant="filter"
+            prefix="From"
+            value={startDate}
+            onChange={(val) => {
+              setStartDate(val);
               setPage(1);
             }}
-            title="End date"
+            maxDate={endDate || undefined}
+            placeholder="From date"
+            ariaLabel="Filter from date"
+          />
+          <DatePicker
+            variant="filter"
+            prefix="To"
+            value={endDate}
+            onChange={(val) => {
+              setEndDate(val);
+              setPage(1);
+            }}
+            minDate={startDate || undefined}
+            placeholder="To date"
+            ariaLabel="Filter to date"
           />
         </div>
 

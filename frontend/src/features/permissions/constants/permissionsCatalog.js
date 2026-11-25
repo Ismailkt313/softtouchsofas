@@ -24,6 +24,20 @@ export const PERMISSION_KEYS = [
   'activity.viewOwn',
   'activity.viewAll',
   'permissions.manage',
+  // Suppliers Module
+  'suppliers.view',
+  'suppliers.create',
+  'suppliers.edit',
+  'suppliers.delete',
+  // Unpaid Bills Module
+  'unpaidBills.view',
+  'unpaidBills.pay',
+  // Miscellaneous Business Module
+  'miscBusiness.view',
+  'miscBusiness.create',
+  'miscBusiness.edit',
+  'miscBusiness.delete',
+  'miscBusiness.reports',
 ]
 
 export const ALL_PERMISSION_KEYS = PERMISSION_KEYS
@@ -47,6 +61,14 @@ export const DEFAULT_DATA_ENTRY_PERMISSIONS = [
   'expenses.create',
   'materials.view',
   'activity.viewOwn',
+  'suppliers.view',
+  'suppliers.create',
+  'suppliers.edit',
+  'unpaidBills.view',
+  'unpaidBills.pay',
+  'miscBusiness.view',
+  'miscBusiness.create',
+  'miscBusiness.edit',
 ]
 
 export const PERMISSION_DEPENDENCIES = {
@@ -67,6 +89,14 @@ export const PERMISSION_DEPENDENCIES = {
   'users.manage': ['users.view'],
   'users.approve': ['users.view'],
   'activity.viewAll': ['activity.viewOwn'],
+  'suppliers.create': ['suppliers.view'],
+  'suppliers.edit': ['suppliers.view'],
+  'suppliers.delete': ['suppliers.view'],
+  'unpaidBills.pay': ['unpaidBills.view'],
+  'miscBusiness.create': ['miscBusiness.view'],
+  'miscBusiness.edit': ['miscBusiness.view'],
+  'miscBusiness.delete': ['miscBusiness.view'],
+  'miscBusiness.reports': ['miscBusiness.view'],
 }
 
 export const PERMISSION_LABELS = {
@@ -95,6 +125,17 @@ export const PERMISSION_LABELS = {
   'activity.viewOwn': 'View My Activity',
   'activity.viewAll': 'View All Activity',
   'permissions.manage': 'Manage Access',
+  'suppliers.view': 'View Suppliers',
+  'suppliers.create': 'Add Suppliers',
+  'suppliers.edit': 'Edit Suppliers',
+  'suppliers.delete': 'Delete Suppliers',
+  'unpaidBills.view': 'View Unpaid Bills',
+  'unpaidBills.pay': 'Mark Bills as Paid',
+  'miscBusiness.view': 'View Misc Business',
+  'miscBusiness.create': 'Add Activities & Entries',
+  'miscBusiness.edit': 'Edit Activities & Entries',
+  'miscBusiness.delete': 'Delete / Void Misc Records',
+  'miscBusiness.reports': 'View Misc Financial Reports',
 }
 
 export const PERMISSION_MODULE_DEFINITIONS = [
@@ -161,6 +202,50 @@ export const PERMISSION_MODULE_DEFINITIONS = [
         key: 'purchases.delete',
         label: 'Delete Purchases',
         description: 'Void or cancel recorded purchase vouchers.',
+      },
+    ],
+  },
+  {
+    id: 'unpaid-bills',
+    label: 'Unpaid Bills',
+    description: 'Outstanding procurement vouchers, unpaid balance metrics, and bill settlement.',
+    permissions: [
+      {
+        key: 'unpaidBills.view',
+        label: 'View Unpaid Bills',
+        description: 'Browse unpaid purchase vouchers and outstanding credit summaries.',
+      },
+      {
+        key: 'unpaidBills.pay',
+        label: 'Mark Bills as Paid',
+        description: 'Update purchase voucher payment status from unpaid to paid.',
+      },
+    ],
+  },
+  {
+    id: 'suppliers',
+    label: 'Suppliers Management',
+    description: 'Vendor directory, supplier contact profiles, and procurement histories.',
+    permissions: [
+      {
+        key: 'suppliers.view',
+        label: 'View Suppliers',
+        description: 'Browse supplier records, contact persons, phone numbers, and balances.',
+      },
+      {
+        key: 'suppliers.create',
+        label: 'Add Suppliers',
+        description: 'Register new material suppliers in the vendor directory.',
+      },
+      {
+        key: 'suppliers.edit',
+        label: 'Edit Suppliers',
+        description: 'Update supplier profiles, contact numbers, and payment details.',
+      },
+      {
+        key: 'suppliers.delete',
+        label: 'Delete Suppliers',
+        description: 'Deactivate or delete supplier accounts from the system.',
       },
     ],
   },
@@ -236,6 +321,38 @@ export const PERMISSION_MODULE_DEFINITIONS = [
     ],
   },
   {
+    id: 'misc-business',
+    label: 'Miscellaneous Business',
+    description: 'Secondary business lines, external revenue, operating purchases, and independent profit reports.',
+    permissions: [
+      {
+        key: 'miscBusiness.view',
+        label: 'View Misc Business',
+        description: 'Access secondary business overview, activities, and sales/purchases.',
+      },
+      {
+        key: 'miscBusiness.create',
+        label: 'Add Activities & Entries',
+        description: 'Create new business activities and record secondary sales or purchases.',
+      },
+      {
+        key: 'miscBusiness.edit',
+        label: 'Edit Activities & Entries',
+        description: 'Modify secondary activities, sales records, and purchase expenses.',
+      },
+      {
+        key: 'miscBusiness.delete',
+        label: 'Delete / Void Misc Records',
+        description: 'Void secondary transactions or delete inactive business activities.',
+      },
+      {
+        key: 'miscBusiness.reports',
+        label: 'View Misc Financial Reports',
+        description: 'Access secondary activity profitability statements and profit margin breakdowns.',
+      },
+    ],
+  },
+  {
     id: 'users',
     label: 'Employee Management',
     description: 'Employee accounts, roles, and signup requests.',
@@ -294,7 +411,9 @@ export const PERMISSION_MODULE_DEFINITIONS = [
 
 export function normalizeRoleKey(role) {
   if (!role) return ''
-  return String(role).trim().toLowerCase().replace(/\s+/g, '_')
+  const normalized = String(role).trim().toLowerCase().replace(/\s+/g, '_')
+  if (normalized === 'administrator') return 'admin'
+  return normalized
 }
 
 export function sanitizePermissionsWithDependencies(
@@ -556,10 +675,12 @@ export function evaluateRouteAccess(pathname, user) {
     normalized === '/unpaid-bills' ||
     normalized.startsWith('/unpaid-bills/')
   ) {
-    const ok = hasPermission(user, 'purchases.view')
+    const ok =
+      hasPermission(user, 'unpaidBills.view') ||
+      hasPermission(user, 'purchases.view')
     return {
       allowed: ok,
-      requiredKeys: ['purchases.view'],
+      requiredKeys: ['unpaidBills.view'],
       moduleTitle: 'Unpaid Bills',
       reason: ok
         ? ''
@@ -569,10 +690,12 @@ export function evaluateRouteAccess(pathname, user) {
   }
 
   if (normalized === '/suppliers' || normalized.startsWith('/suppliers/')) {
-    const ok = hasPermission(user, 'purchases.view')
+    const ok =
+      hasPermission(user, 'suppliers.view') ||
+      hasPermission(user, 'purchases.view')
     return {
       allowed: ok,
-      requiredKeys: ['purchases.view'],
+      requiredKeys: ['suppliers.view'],
       moduleTitle: 'Suppliers',
       reason: ok
         ? ''
@@ -585,10 +708,12 @@ export function evaluateRouteAccess(pathname, user) {
     normalized === '/misc-business/reports' ||
     normalized.startsWith('/misc-business/reports/')
   ) {
-    const ok = hasPermission(user, 'reports.view')
+    const ok =
+      hasPermission(user, 'miscBusiness.reports') ||
+      hasPermission(user, 'reports.view')
     return {
       allowed: ok,
-      requiredKeys: ['reports.view'],
+      requiredKeys: ['miscBusiness.reports'],
       moduleTitle: 'Miscellaneous Business Reports',
       reason: ok
         ? ''
@@ -602,11 +727,12 @@ export function evaluateRouteAccess(pathname, user) {
     normalized.startsWith('/misc-business/')
   ) {
     const ok =
+      hasPermission(user, 'miscBusiness.view') ||
       hasPermission(user, 'dashboard.view') ||
       hasPermission(user, 'purchases.view')
     return {
       allowed: ok,
-      requiredKeys: ['dashboard.view'],
+      requiredKeys: ['miscBusiness.view'],
       moduleTitle: 'Miscellaneous Business',
       reason: ok
         ? ''

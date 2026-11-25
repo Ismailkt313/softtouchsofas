@@ -7,6 +7,21 @@ export const PROJECT_STATUS_OPTIONS = [
   'Completed',
 ]
 
+export const PAYMENT_STATUS_OPTIONS = [
+  'Unpaid',
+  'Partially Paid',
+  'Fully Paid',
+]
+
+export const PAYMENT_METHOD_OPTIONS = [
+  'Cash',
+  'Bank Transfer',
+  'UPI',
+  'Cheque',
+  'Card',
+  'Other',
+]
+
 export const PROJECT_CATEGORY_OPTIONS = [
   'Modular Sofa',
   'Curtains',
@@ -211,6 +226,27 @@ export function normalizeProject(raw = {}) {
       Number.isFinite(Number(raw.contractValue))
         ? Number(raw.contractValue)
         : null,
+    totalReceived: Number.isFinite(Number(raw.totalReceived))
+      ? Number(raw.totalReceived)
+      : 0,
+    outstandingBalance:
+      raw.outstandingBalance !== null &&
+      raw.outstandingBalance !== undefined &&
+      Number.isFinite(Number(raw.outstandingBalance))
+        ? Number(raw.outstandingBalance)
+        : null,
+    paymentStatus:
+      raw.paymentStatus ||
+      (Number(raw.totalReceived) > 0
+        ? Number(raw.contractValue) > 0 &&
+          Number(raw.totalReceived) >= Number(raw.contractValue)
+          ? 'Fully Paid'
+          : 'Partially Paid'
+        : 'Unpaid'),
+    excessPayment: Number.isFinite(Number(raw.excessPayment))
+      ? Number(raw.excessPayment)
+      : 0,
+    lastPaymentDate: raw.lastPaymentDate || null,
     totalPurchases: Number.isFinite(Number(raw.totalPurchases))
       ? Number(raw.totalPurchases)
       : 0,
@@ -281,6 +317,27 @@ export function normalizeFinancialSummary(rawSummary = {}, rawIntegrations = {})
       Number.isFinite(Number(rawSummary.contractValue))
         ? Number(rawSummary.contractValue)
         : null,
+    totalReceived: Number.isFinite(Number(rawSummary.totalReceived))
+      ? Number(rawSummary.totalReceived)
+      : 0,
+    outstandingBalance:
+      rawSummary.outstandingBalance !== null &&
+      rawSummary.outstandingBalance !== undefined &&
+      Number.isFinite(Number(rawSummary.outstandingBalance))
+        ? Number(rawSummary.outstandingBalance)
+        : null,
+    paymentStatus:
+      rawSummary.paymentStatus ||
+      (Number(rawSummary.totalReceived) > 0
+        ? Number(rawSummary.contractValue) > 0 &&
+          Number(rawSummary.totalReceived) >= Number(rawSummary.contractValue)
+          ? 'Fully Paid'
+          : 'Partially Paid'
+        : 'Unpaid'),
+    excessPayment: Number.isFinite(Number(rawSummary.excessPayment))
+      ? Number(rawSummary.excessPayment)
+      : 0,
+    lastPaymentDate: rawSummary.lastPaymentDate || null,
     totalPurchases: Number.isFinite(Number(rawSummary.totalPurchases))
       ? Number(rawSummary.totalPurchases)
       : 0,
@@ -825,5 +882,53 @@ export async function triggerActivityWarningsEvaluation({
       error,
       'Unable to evaluate project inactivity right now.',
     )
+  }
+}
+
+export async function fetchProjectPayments(projectIdentifier) {
+  if (!projectIdentifier) {
+    throw new Error('Project identifier is required.')
+  }
+  try {
+    const response = await api.get(
+      `/api/projects/${encodeURIComponent(projectIdentifier)}/payments`,
+    )
+    return response.data
+  } catch (error) {
+    throw buildApiError(error, 'Unable to load project client payments.')
+  }
+}
+
+export async function recordProjectPayment(projectIdentifier, paymentPayload) {
+  if (!projectIdentifier) {
+    throw new Error('Project identifier is required.')
+  }
+  try {
+    const response = await api.post(
+      `/api/projects/${encodeURIComponent(projectIdentifier)}/payments`,
+      paymentPayload,
+    )
+    return response.data
+  } catch (error) {
+    throw buildApiError(error, 'Unable to record client payment.')
+  }
+}
+
+export async function reverseProjectPayment(
+  projectIdentifier,
+  paymentId,
+  reversalPayload,
+) {
+  if (!projectIdentifier || !paymentId) {
+    throw new Error('Project and payment identifiers are required.')
+  }
+  try {
+    const response = await api.post(
+      `/api/projects/${encodeURIComponent(projectIdentifier)}/payments/${encodeURIComponent(paymentId)}/reverse`,
+      reversalPayload,
+    )
+    return response.data
+  } catch (error) {
+    throw buildApiError(error, 'Unable to reverse client payment.')
   }
 }

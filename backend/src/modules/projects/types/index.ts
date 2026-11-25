@@ -100,6 +100,21 @@ export interface IProjectController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  listPayments(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  recordPayment(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  reversePayment(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }
 
 export interface ProjectFinancialSummaryDto {
@@ -109,6 +124,11 @@ export interface ProjectFinancialSummaryDto {
   clientName: string;
   status: ProjectStatus;
   contractValue: number | null;
+  totalReceived?: number;
+  outstandingBalance?: number | null;
+  paymentStatus?: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+  excessPayment?: number;
+  lastPaymentDate?: Date | null;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;
@@ -137,6 +157,11 @@ export interface ProjectResponseDto {
   description: string;
   materialsUsed: Array<{ materialId: string; materialName: string; unit: string; quantity: number; notes?: string }>;
   contractValue: number | null;
+  totalReceived?: number;
+  outstandingBalance?: number | null;
+  paymentStatus?: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+  excessPayment?: number;
+  lastPaymentDate?: Date | null;
   creationDate?: Date;
   totalPurchases: number;
   totalOtherExpenses: number;
@@ -216,6 +241,11 @@ export interface ProjectFinancialCalculationInput {
 
 export interface ProjectFinancialMetrics {
   contractValue: number | null;
+  totalReceived?: number;
+  outstandingBalance?: number | null;
+  paymentStatus?: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+  excessPayment?: number;
+  lastPaymentDate?: Date | null;
   totalPurchases: number;
   totalOtherExpenses: number;
   totalCost: number;

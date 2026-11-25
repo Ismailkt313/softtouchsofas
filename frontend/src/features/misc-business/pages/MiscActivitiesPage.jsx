@@ -3,10 +3,16 @@ import miscBusinessService from '../services/miscBusinessService';
 import { MiscActivitiesTable } from '../components/MiscActivitiesTable';
 import { MiscActivitiesMobileList } from '../components/MiscActivitiesMobileList';
 import { ActivityFormModal } from '../components/ActivityFormModal';
-import { Pagination } from '../../../components/common/Pagination';
+import { Dropdown, Pagination } from '../../../components/common';
 import '../styles/misc-business.css';
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'active', label: 'Active Only' },
+  { value: 'inactive', label: 'Inactive Only' },
+];
 
 export function MiscActivitiesPage({ onNavigate }) {
   const [activities, setActivities] = useState([]);
@@ -109,18 +115,16 @@ export function MiscActivitiesPage({ onNavigate }) {
             }}
           />
 
-          <select
-            className="mb-select"
+          <Dropdown
+            variant="filter"
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
+            options={STATUS_FILTER_OPTIONS}
+            onChange={(val) => {
+              setStatus(val);
               setPage(1);
             }}
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
+            placeholder="All Statuses"
+          />
         </div>
 
         <div className="mb-filters-bar__right">

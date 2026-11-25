@@ -369,6 +369,23 @@ export function useProjectsList({ currentUser }) {
     setRefreshTick((prev) => prev + 1)
   }, [])
 
+  const updateProjectLocally = useCallback((projectIdOrCode, updates) => {
+    if (!projectIdOrCode || !updates) return
+    const target = String(projectIdOrCode).toUpperCase()
+    setProjects((prev) =>
+      prev.map((item) => {
+        const matches =
+          String(item.id || '').toUpperCase() === target ||
+          String(item.projectId || '').toUpperCase() === target
+        if (!matches) return item
+        return {
+          ...item,
+          ...updates,
+        }
+      }),
+    )
+  }, [])
+
   const openCreateModal = useCallback(() => {
     setIsCreateModalOpen(true)
   }, [])
@@ -593,6 +610,7 @@ export function useProjectsList({ currentUser }) {
     authRequired,
     error,
     reloadProjects,
+    updateProjectLocally,
 
     automationState,
     activeWarningByProjectCode,

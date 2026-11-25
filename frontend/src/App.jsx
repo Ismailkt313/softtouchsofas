@@ -426,6 +426,7 @@ function App() {
                 <ProfilePage
                   currentUser={currentUser}
                   onLogout={handleLogout}
+                  onNavigate={navigate}
                 />
               ) : isActivityRoute ? (
                 <ActivityHistoryPage

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requirePermission, verifyToken } from '../../middleware/auth';
+import { requireAnyPermission, verifyToken } from '../../middleware/auth';
 import { SupplierController } from './controller/supplier.controller';
 import { SupplierRepository } from './repository/supplier.repository';
 import { SupplierService } from './service/supplier.service';
@@ -14,27 +14,27 @@ supplierRouter.use(verifyToken);
 
 supplierRouter.get(
   '/',
-  requirePermission('purchases.view'),
+  requireAnyPermission(['suppliers.view', 'purchases.view']),
   supplierController.list,
 );
 supplierRouter.post(
   '/',
-  requirePermission('purchases.create'),
+  requireAnyPermission(['suppliers.create', 'purchases.create']),
   supplierController.create,
 );
 supplierRouter.get(
   '/:id/purchases',
-  requirePermission('purchases.view'),
+  requireAnyPermission(['suppliers.view', 'purchases.view']),
   supplierController.getPurchases,
 );
 supplierRouter.get(
   '/:id',
-  requirePermission('purchases.view'),
+  requireAnyPermission(['suppliers.view', 'purchases.view']),
   supplierController.getById,
 );
 supplierRouter.patch(
   '/:id',
-  requirePermission('purchases.edit'),
+  requireAnyPermission(['suppliers.edit', 'purchases.edit']),
   supplierController.update,
 );
 

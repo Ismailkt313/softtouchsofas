@@ -5,6 +5,7 @@ import miscBusinessService, {
 } from '../services/miscBusinessService';
 import { SaleFormModal } from '../components/SaleFormModal';
 import { PurchaseFormModal } from '../components/PurchaseFormModal';
+import { Dropdown, DatePicker } from '../../../components/common';
 import '../styles/misc-business.css';
 
 export function MiscOverviewPage({ onNavigate }) {
@@ -90,33 +91,36 @@ export function MiscOverviewPage({ onNavigate }) {
       {/* Filter Bar */}
       <div className="mb-filters-bar">
         <div className="mb-filters-bar__left">
-          <select
-            className="mb-select"
+          <Dropdown
+            variant="filter"
             value={selectedActivityId}
-            onChange={(e) => setSelectedActivityId(e.target.value)}
-          >
-            <option value="">All Business Activities</option>
-            {activities.map((act) => (
-              <option key={act.id} value={act.id}>
-                {act.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="date"
-            className="mb-date-input"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            title="Start date"
+            options={[
+              { value: '', label: 'All Business Activities' },
+              ...activities.map((act) => ({ value: act.id, label: act.name })),
+            ]}
+            onChange={setSelectedActivityId}
+            placeholder="All Business Activities"
+            searchable
+            searchPlaceholder="Search activity..."
           />
-          <span style={{ color: 'var(--sts-taupe)', fontSize: '0.85rem' }}>to</span>
-          <input
-            type="date"
-            className="mb-date-input"
+
+          <DatePicker
+            variant="filter"
+            prefix="From"
+            value={startDate}
+            onChange={setStartDate}
+            maxDate={endDate || undefined}
+            placeholder="From date"
+            ariaLabel="Filter from date"
+          />
+          <DatePicker
+            variant="filter"
+            prefix="To"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            title="End date"
+            onChange={setEndDate}
+            minDate={startDate || undefined}
+            placeholder="To date"
+            ariaLabel="Filter to date"
           />
         </div>
 

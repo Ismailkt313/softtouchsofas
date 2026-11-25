@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import miscBusinessService from '../services/miscBusinessService';
 import { ActivityFormModal } from './ActivityFormModal';
+import { Dropdown, DatePicker } from '../../../components/common';
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'Cash', label: 'Cash' },
+  { value: 'Bank Transfer', label: 'Bank Transfer' },
+  { value: 'UPI', label: 'UPI' },
+  { value: 'Cheque', label: 'Cheque' },
+  { value: 'Card', label: 'Card' },
+  { value: 'Other', label: 'Other' },
+];
 
 function getTodayIso() {
   const d = new Date();
@@ -186,19 +196,24 @@ export function PurchaseFormModal({
                   Business Activity <span className="req">*</span>
                 </label>
                 <div className="mb-activity-select-row">
-                  <select
-                    className="mb-form-select"
+                  <Dropdown
+                    variant="form"
                     value={activityId}
-                    onChange={(e) => setActivityId(e.target.value)}
-                    required
-                  >
-                    <option value="">— Select an Activity —</option>
-                    {activities.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={activities.map((a) => ({
+                      value: a.id,
+                      label: a.name,
+                    }))}
+                    onChange={(val) => {
+                      setActivityId(val);
+                      if (errors.activityId) {
+                        setErrors((prev) => ({ ...prev, activityId: '' }));
+                      }
+                    }}
+                    placeholder="— Select an Activity —"
+                    searchable
+                    searchPlaceholder="Search activity..."
+                    error={Boolean(errors.activityId)}
+                  />
                   <button
                     type="button"
                     className="mb-btn-add-inline"
@@ -219,12 +234,17 @@ export function PurchaseFormModal({
                   <label className="mb-form-label">
                     Date <span className="req">*</span>
                   </label>
-                  <input
-                    type="date"
-                    className="mb-form-input"
+                  <DatePicker
+                    variant="form"
                     value={purchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
+                    onChange={(val) => {
+                      setPurchaseDate(val);
+                      if (errors.purchaseDate) {
+                        setErrors((prev) => ({ ...prev, purchaseDate: '' }));
+                      }
+                    }}
                     required
+                    error={Boolean(errors.purchaseDate)}
                   />
                   {errors.purchaseDate ? (
                     <span className="mb-form-error">{errors.purchaseDate}</span>
@@ -279,18 +299,13 @@ export function PurchaseFormModal({
               {/* Row 4: Payment Method */}
               <div className="mb-form-group">
                 <label className="mb-form-label">Payment Method</label>
-                <select
-                  className="mb-form-select"
+                <Dropdown
+                  variant="form"
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="UPI">UPI</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="Card">Card</option>
-                  <option value="Other">Other</option>
-                </select>
+                  options={PAYMENT_METHOD_OPTIONS}
+                  onChange={setPaymentMethod}
+                  placeholder="Select payment method"
+                />
               </div>
 
               {/* Row 5: Description */}

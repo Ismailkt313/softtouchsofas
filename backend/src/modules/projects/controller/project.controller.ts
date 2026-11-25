@@ -12,6 +12,11 @@ import {
 } from '../dto/list-projects.dto';
 import { validateUpdateProjectDto } from '../dto/update-project.dto';
 import { validateUpdateProjectStatusDto } from '../dto/update-status.dto';
+import { projectPaymentService } from '../service/project-payment.service';
+import {
+  validateCreateProjectPaymentDto,
+  validateReverseProjectPaymentDto,
+} from '../dto/project-payment.dto';
 import { ProjectMaterialConsumptionService, MaterialConsumptionError } from '../service/material-consumption.service';
 import {
   IProjectController,
@@ -48,9 +53,14 @@ function redactProjectForCaller(
     clientName: project.clientName,
     category: project.category,
     status: project.status,
+    paymentStatus: project.paymentStatus,
     description: project.description,
     materialsUsed: project.materialsUsed,
     contractValue: null,
+    totalReceived: null,
+    outstandingBalance: null,
+    excessPayment: null,
+    lastPaymentDate: project.lastPaymentDate,
     totalPurchases: null,
     totalOtherExpenses: null,
     totalCost: null,
@@ -883,6 +893,214 @@ export class ProjectController implements IProjectController {
         ...evaluation,
       });
     } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  listPayments = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const identifier = extractParam(req.params.id);
+      if (!identifier) {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: 'Project identifier is required.',
+        });
+        return;
+      }
+
+      const result = await projectPaymentService.listPayments(identifier);
+
+      const assignedProjectIds =
+        req.user?.role === 'admin' ? null : req.user?.assignedProjectIds;
+      if (
+        !isProjectAccessibleToCaller(
+          assignedProjectIds,
+          result.project.id,
+          result.project.projectId,
+        )
+      ) {
+        respondProjectAccessDenied(res);
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Failed to list project payments.';
+      if (msg.includes('not found')) {
+        res.status(404).json({ error: 'Not Found', message: msg });
+        return;
+      }
+      next(error);
+    }
+  };
+
+  recordPayment = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const identifier = extractParam(req.params.id);
+      if (!identifier) {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: 'Project identifier is required.',
+        });
+        return;
+      }
+
+      const validation = validateCreateProjectPaymentDto(req.body);
+      if (!validation.isValid || !validation.value) {
+        const firstError = validation.errors
+          ? Object.values(validation.errors)[0]
+          : 'Invalid payment parameters.';
+        res.status(400).json({
+          error: 'Bad Request',
+          message: firstError,
+          errors: validation.errors,
+        });
+        return;
+      }
+
+      const user = {
+        id: req.user?.id || 'system',
+        name: req.user?.name || req.user?.email || 'System User',
+      };
+
+      const result = await projectPaymentService.recordPayment(
+        identifier,
+        validation.value,
+        user,
+      );
+
+      // Record activity event
+      try {
+        await activityService.recordActivity({
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: req.user?.role || 'admin',
+          entityType: 'project',
+          actionType: 'payment_recorded',
+          entityId: String(result.payment.projectRefId),
+          entityName: `${result.payment.projectId} - Payment ${result.payment.paymentReference}`,
+          projectId: String(result.payment.projectRefId),
+          projectCode: result.payment.projectId,
+          details: {
+            paymentReference: result.payment.paymentReference,
+            amount: result.payment.amount,
+            paymentMethod: result.payment.paymentMethod,
+            transactionReference: result.payment.transactionReference,
+            paymentStatus: result.summary.paymentStatus,
+            outstandingBalance: result.summary.outstandingBalance,
+          },
+        });
+      } catch {
+        // Non-blocking activity logging
+      }
+
+      res.status(201).json({
+        message: 'Payment recorded successfully.',
+        payment: result.payment,
+        summary: result.summary,
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Failed to record payment.';
+      if (msg.includes('not found')) {
+        res.status(404).json({ error: 'Not Found', message: msg });
+        return;
+      }
+      if (msg.includes('cannot exceed') || msg.includes('greater than zero') || msg.includes('not set') || msg.includes('no remaining')) {
+        res.status(400).json({ error: 'Bad Request', message: msg });
+        return;
+      }
+      next(error);
+    }
+  };
+
+  reversePayment = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const identifier = extractParam(req.params.id);
+      const paymentId = extractParam(req.params.paymentId);
+      if (!identifier || !paymentId) {
+        res.status(400).json({
+          error: 'Bad Request',
+          message: 'Project and payment identifiers are required.',
+        });
+        return;
+      }
+
+      const validation = validateReverseProjectPaymentDto(req.body);
+      if (!validation.isValid || !validation.value) {
+        const firstError = validation.errors
+          ? Object.values(validation.errors)[0]
+          : 'Invalid reversal parameters.';
+        res.status(400).json({
+          error: 'Bad Request',
+          message: firstError,
+          errors: validation.errors,
+        });
+        return;
+      }
+
+      const user = {
+        id: req.user?.id || 'system',
+        name: req.user?.name || req.user?.email || 'System User',
+      };
+
+      const result = await projectPaymentService.reversePayment(
+        identifier,
+        paymentId,
+        validation.value,
+        user,
+      );
+
+      // Record activity event
+      try {
+        await activityService.recordActivity({
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: req.user?.role || 'admin',
+          entityType: 'project',
+          actionType: 'payment_reversed',
+          entityId: String(result.payment.projectRefId),
+          entityName: `${result.payment.projectId} - Reversal ${result.payment.paymentReference}`,
+          projectId: String(result.payment.projectRefId),
+          projectCode: result.payment.projectId,
+          details: {
+            paymentReference: result.payment.paymentReference,
+            amount: result.payment.amount,
+            reason: validation.value.reason,
+            paymentStatus: result.summary.paymentStatus,
+            outstandingBalance: result.summary.outstandingBalance,
+          },
+        });
+      } catch {
+        // Non-blocking activity logging
+      }
+
+      res.status(200).json({
+        message: 'Payment reversed successfully.',
+        payment: result.payment,
+        summary: result.summary,
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Failed to reverse payment.';
+      if (msg.includes('not found')) {
+        res.status(404).json({ error: 'Not Found', message: msg });
+        return;
+      }
+      if (msg.includes('already been reversed')) {
+        res.status(400).json({ error: 'Bad Request', message: msg });
+        return;
+      }
       next(error);
     }
   };

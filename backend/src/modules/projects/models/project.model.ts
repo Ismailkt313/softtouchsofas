@@ -48,6 +48,11 @@ export interface IProject {
   status: ProjectStatus;
   description?: string;
   contractValue?: number | null;
+  totalReceived?: number;
+  outstandingBalance?: number | null;
+  paymentStatus?: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+  excessPayment?: number;
+  lastPaymentDate?: Date | null;
   creationDate?: Date;
   costAlertThresholdPercent: number;
   totalPurchases: number;
@@ -119,6 +124,35 @@ const ProjectSchema = new Schema<IProject>(
       required: false,
       default: null,
       min: 0,
+    },
+    totalReceived: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    outstandingBalance: {
+      type: Number,
+      required: false,
+      default: null,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['Unpaid', 'Partially Paid', 'Fully Paid'],
+      required: true,
+      default: 'Unpaid',
+      index: true,
+    },
+    excessPayment: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    lastPaymentDate: {
+      type: Date,
+      required: false,
+      default: null,
     },
     costAlertThresholdPercent: {
       type: Number,

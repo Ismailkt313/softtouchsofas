@@ -789,8 +789,10 @@
   align-items: stretch;
 }
 
-.mb-activity-select-row select {
+.mb-activity-select-row select,
+.mb-activity-select-row .sts-dropdown {
   flex: 1;
+  min-width: 0;
 }
 
 .mb-btn-add-inline {

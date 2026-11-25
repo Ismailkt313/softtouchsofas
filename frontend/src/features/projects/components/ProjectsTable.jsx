@@ -1,4 +1,5 @@
 import { formatCurrency } from '../services/projectService'
+import { ProjectPaymentStatusBadge } from './ProjectPaymentStatusBadge'
 import { ProjectRowActionsMenu } from './ProjectRowActionsMenu'
 import {
   ProjectCostThresholdBadge,
@@ -16,6 +17,7 @@ export function ProjectsTable({
   onViewDetails,
   onEdit,
   onStatusChange,
+  onOpenPaymentModal,
 }) {
   return (
     <div className="projects-table-wrap">
@@ -30,7 +32,8 @@ export function ProjectsTable({
                 Contract Value
               </th>
             ) : null}
-            <th scope="col">Status</th>
+            <th scope="col">Project Status</th>
+            <th scope="col">Payment Status</th>
             <th scope="col" className="projects-table__col-actions">
               Actions
             </th>
@@ -135,12 +138,29 @@ export function ProjectsTable({
                   )}
                 </td>
 
+                <td>
+                  <ProjectPaymentStatusBadge
+                    status={project.paymentStatus}
+                    contractValueSet={
+                      project.contractValue !== null &&
+                      project.contractValue !== undefined &&
+                      Number(project.contractValue) > 0
+                    }
+                    onClick={
+                      canEditProject && typeof onOpenPaymentModal === 'function'
+                        ? () => onOpenPaymentModal(project)
+                        : null
+                    }
+                  />
+                </td>
+
                 <td className="projects-table__col-actions">
                   <ProjectRowActionsMenu
                     project={project}
                     onViewDetails={onViewDetails}
                     onEdit={canEditProject ? onEdit : null}
                     onStatusChange={canEditProject ? onStatusChange : null}
+                    onOpenPayment={canEditProject ? onOpenPaymentModal : null}
                     showQuickViewButton
                   />
                 </td>

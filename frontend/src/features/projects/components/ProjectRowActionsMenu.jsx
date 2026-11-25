@@ -57,6 +57,7 @@ export function ProjectRowActionsMenu({
   onViewDetails,
   onEdit,
   onStatusChange,
+  onOpenPayment,
   showQuickViewButton = true,
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -67,6 +68,20 @@ export function ProjectRowActionsMenu({
 
   const currentStatus = normalizeStatusValue(project?.status)
   const targetKey = String(project?.projectId || project?.id || '').trim()
+
+  const hasContractValue =
+    project?.contractValue !== null &&
+    project?.contractValue !== undefined &&
+    Number(project?.contractValue) > 0
+
+  const isFullyPaid =
+    String(project?.paymentStatus || '').trim().toLowerCase() === 'fully paid' ||
+    String(project?.paymentStatus || '').trim().toLowerCase() === 'paid' ||
+    (hasContractValue &&
+      Number(project?.totalReceived) > 0 &&
+      Number(project?.totalReceived) >= Number(project?.contractValue))
+
+  const isPaymentDisabled = isFullyPaid || !hasContractValue
 
   const closeMenu = useCallback((restoreFocus = false) => {
     setIsOpen(false)
@@ -229,6 +244,56 @@ export function ProjectRowActionsMenu({
                     />
                   </svg>
                   <span>Edit Project</span>
+                </button>
+              ) : null}
+
+              {typeof onOpenPayment === 'function' ? (
+                <button
+                  type="button"
+                  className={`project-portal-menu__item${
+                    isPaymentDisabled
+                      ? ' project-portal-menu__item--disabled'
+                      : ''
+                  }`}
+                  role="menuitem"
+                  disabled={isPaymentDisabled}
+                  aria-disabled={isPaymentDisabled}
+                  title={
+                    isFullyPaid
+                      ? 'Payment status: Fully Paid (Settled)'
+                      : !hasContractValue
+                        ? 'Set Contract Value before recording payments'
+                        : 'Record Payment'
+                  }
+                  onClick={() => {
+                    if (isPaymentDisabled) return
+                    setIsOpen(false)
+                    onOpenPayment(project)
+                  }}
+                >
+                  <svg viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <rect
+                      x="2"
+                      y="4"
+                      width="14"
+                      height="10"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                    <path d="M2 8H16" stroke="currentColor" strokeWidth="1.4" />
+                    <circle cx="5" cy="11" r="1" fill="currentColor" />
+                  </svg>
+                  <span>Record Payment</span>
+                  {isFullyPaid ? (
+                    <span className="project-portal-menu__badge-settled">
+                      Settled
+                    </span>
+                  ) : !hasContractValue ? (
+                    <span className="project-portal-menu__badge-settled">
+                      No CV
+                    </span>
+                  ) : null}
                 </button>
               ) : null}
 

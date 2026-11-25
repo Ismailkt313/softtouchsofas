@@ -22,7 +22,6 @@ const BusinessActivitySchema = new Schema<BusinessActivityDocument>(
       type: String,
       required: true,
       trim: true,
-      index: true,
     },
     description: {
       type: String,

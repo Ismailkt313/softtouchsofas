@@ -97,9 +97,8 @@ export async function verifyToken(
       return;
     }
 
-    const canonicalRole = liveUser.role
-      .toLowerCase()
-      .replace(/\s+/g, '_') as 'admin' | 'data_entry';
+    const rawRole = liveUser.role.toLowerCase().replace(/\s+/g, '_');
+    const canonicalRole = (rawRole === 'administrator' ? 'admin' : rawRole) as 'admin' | 'data_entry';
 
     const approvalStatus =
       liveUser.approvalStatus ||
