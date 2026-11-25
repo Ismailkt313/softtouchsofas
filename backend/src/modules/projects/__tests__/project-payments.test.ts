@@ -188,7 +188,7 @@ async function runPaymentTests() {
   assert.strictEqual(listResult.summary.totalReceived, 150000);
 
   // Step 2f: Reverse the second payment (₹40,000)
-  const paymentToReverse = rec2.payment._id.toString();
+  const paymentToReverse = String(rec2.payment._id);
   const revResult = await projectPaymentService.reversePayment(
     testProject.projectId,
     paymentToReverse,

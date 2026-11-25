@@ -978,29 +978,18 @@ export class ProjectController implements IProjectController {
       );
 
       // Record activity event
-      try {
-        await activityService.recordActivity({
-          actorId: user.id,
-          actorName: user.name,
-          actorRole: req.user?.role || 'admin',
-          entityType: 'project',
-          actionType: 'payment_recorded',
-          entityId: String(result.payment.projectRefId),
-          entityName: `${result.payment.projectId} - Payment ${result.payment.paymentReference}`,
-          projectId: String(result.payment.projectRefId),
-          projectCode: result.payment.projectId,
-          details: {
-            paymentReference: result.payment.paymentReference,
-            amount: result.payment.amount,
-            paymentMethod: result.payment.paymentMethod,
-            transactionReference: result.payment.transactionReference,
-            paymentStatus: result.summary.paymentStatus,
-            outstandingBalance: result.summary.outstandingBalance,
-          },
-        });
-      } catch {
-        // Non-blocking activity logging
-      }
+      await activityService.recordSafe({
+        actionType: 'project.updated',
+        entityType: 'project',
+        entityId: String(result.payment.projectRefId || result.payment.projectId),
+        entityLabel: `${result.payment.projectId} — Payment ${result.payment.paymentReference}`,
+        description: `Recorded payment ${result.payment.paymentReference} of ₹${result.payment.amount} for ${result.payment.projectId}.`,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: req.user?.role === 'admin' ? 'admin' : 'data_entry',
+        projectCode: result.payment.projectId,
+        targetPath: `/projects/${encodeURIComponent(result.payment.projectId)}`,
+      });
 
       res.status(201).json({
         message: 'Payment recorded successfully.',
@@ -1063,28 +1052,18 @@ export class ProjectController implements IProjectController {
       );
 
       // Record activity event
-      try {
-        await activityService.recordActivity({
-          actorId: user.id,
-          actorName: user.name,
-          actorRole: req.user?.role || 'admin',
-          entityType: 'project',
-          actionType: 'payment_reversed',
-          entityId: String(result.payment.projectRefId),
-          entityName: `${result.payment.projectId} - Reversal ${result.payment.paymentReference}`,
-          projectId: String(result.payment.projectRefId),
-          projectCode: result.payment.projectId,
-          details: {
-            paymentReference: result.payment.paymentReference,
-            amount: result.payment.amount,
-            reason: validation.value.reason,
-            paymentStatus: result.summary.paymentStatus,
-            outstandingBalance: result.summary.outstandingBalance,
-          },
-        });
-      } catch {
-        // Non-blocking activity logging
-      }
+      await activityService.recordSafe({
+        actionType: 'project.updated',
+        entityType: 'project',
+        entityId: String(result.payment.projectRefId || result.payment.projectId),
+        entityLabel: `${result.payment.projectId} — Reversal ${result.payment.paymentReference}`,
+        description: `Reversed payment ${result.payment.paymentReference} of ₹${result.payment.amount} for ${result.payment.projectId}: ${validation.value.reason}.`,
+        actorId: user.id,
+        actorName: user.name,
+        actorRole: req.user?.role === 'admin' ? 'admin' : 'data_entry',
+        projectCode: result.payment.projectId,
+        targetPath: `/projects/${encodeURIComponent(result.payment.projectId)}`,
+      });
 
       res.status(200).json({
         message: 'Payment reversed successfully.',
