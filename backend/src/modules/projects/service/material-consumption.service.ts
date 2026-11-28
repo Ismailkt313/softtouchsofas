@@ -105,7 +105,7 @@ export class ProjectMaterialConsumptionService {
       const reCompleted = await ProjectModel.findOneAndUpdate(
         { _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: true },
         { $set: { status: 'Completed' } },
-        { new: true, ...(session ? { session } : {}) }
+        { returnDocument: 'after', ...(session ? { session } : {}) }
       );
       return (reCompleted || project).toObject();
     }
@@ -138,7 +138,7 @@ export class ProjectMaterialConsumptionService {
       const updated = await ProjectModel.findOneAndUpdate(
         { _id: project._id, status: { $ne: 'Completed' }, materialsConsumptionRecorded: { $ne: true } },
         { $set: { status: 'Completed', materialsUsed: used, materialsConsumptionRecorded: true } },
-        { new: true, ...(session ? { session } : {}) }
+        { returnDocument: 'after', ...(session ? { session } : {}) }
       );
       if (!updated) throw new MaterialConsumptionError('Project was completed concurrently; no additional stock was deducted.', 409);
       return updated.toObject();

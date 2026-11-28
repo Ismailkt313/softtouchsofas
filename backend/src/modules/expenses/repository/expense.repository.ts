@@ -165,7 +165,7 @@ export class ExpenseRepository implements IExpenseRepository {
                   createdBy: 'system',
                 },
               },
-              { upsert: true, new: true },
+              { upsert: true, returnDocument: 'after' },
             )
             .exec();
         }
@@ -362,7 +362,7 @@ export class ExpenseRepository implements IExpenseRepository {
           .findByIdAndUpdate(
             cleanId,
             { $set: sanitizedUpdates },
-            { new: true, runValidators: true },
+            { returnDocument: 'after', runValidators: true },
           )
           .lean()
           .exec();
@@ -454,7 +454,7 @@ export class ExpenseRepository implements IExpenseRepository {
         .findOneAndUpdate(
           { _id: EXPENSE_VOUCHER_COUNTER_ID },
           { $inc: { seq: 1 } },
-          { upsert: true, new: true },
+          { upsert: true, returnDocument: 'after' },
         )
         .lean()
         .exec();
@@ -865,7 +865,7 @@ export class ExpenseRepository implements IExpenseRepository {
         .findByIdAndUpdate(
           cleanId,
           { $set: sanitizedUpdates },
-          { new: true, runValidators: true },
+          { returnDocument: 'after', runValidators: true },
         )
         .lean()
         .exec();

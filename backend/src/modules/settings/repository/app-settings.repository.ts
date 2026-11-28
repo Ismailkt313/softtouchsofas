@@ -97,7 +97,7 @@ export class AppSettingsRepository {
               updatedAt: now,
             },
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
         )
         .lean()
         .exec();

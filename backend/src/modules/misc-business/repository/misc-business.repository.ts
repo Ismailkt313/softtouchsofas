@@ -177,7 +177,7 @@ export class MiscBusinessRepository {
               updatedAt: now,
             },
           },
-          { new: true },
+          { returnDocument: 'after' },
         )
         .lean()
         .exec();
@@ -482,7 +482,7 @@ export class MiscBusinessRepository {
               updatedAt: now,
             },
           },
-          { new: true },
+          { returnDocument: 'after' },
         )
         .lean()
         .exec();
@@ -740,7 +740,7 @@ export class MiscBusinessRepository {
               updatedAt: now,
             },
           },
-          { new: true },
+          { returnDocument: 'after' },
         )
         .lean()
         .exec();

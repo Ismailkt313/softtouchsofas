@@ -1,5 +1,10 @@
 import mongoose, { Model } from 'mongoose';
-import { IUser, UserModel, sharedUserMemoryStore } from '../models/user.model';
+import {
+  IUser,
+  UserModel,
+  buildUserIdFilter,
+  sharedUserMemoryStore,
+} from '../models/user.model';
 
 import { IAuthRepository } from '../types';
 
@@ -45,15 +50,23 @@ export class AuthRepository implements IAuthRepository {
   }
 
   async findById(id: string): Promise<IUser | null> {
+    const cleanId = String(id || '').trim();
+    if (!cleanId) {
+      return null;
+    }
+
     if (this.isDbConnected()) {
-      const doc = await this.userModel.findById(id).lean().exec();
+      const doc = await this.userModel
+        .findOne(buildUserIdFilter(cleanId) as any)
+        .lean()
+        .exec();
       if (doc) {
         return doc as unknown as IUser;
       }
     }
 
     for (const user of this.memoryStore.values()) {
-      if (String(user._id) === id) {
+      if (String(user._id) === cleanId) {
         const { password: _p, ...withoutPassword } = user;
         return withoutPassword as IUser;
       }

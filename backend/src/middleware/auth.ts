@@ -6,6 +6,7 @@ import { AuthenticatedRequest, AuthTokenPayload } from '../types/auth';
 import {
   IUser,
   UserModel,
+  buildUserIdFilter,
   sharedUserMemoryStore,
 } from '../modules/auth/models/user.model';
 import {
@@ -31,9 +32,16 @@ export function generateToken(
 }
 
 export async function findLiveUserById(id: string): Promise<IUser | null> {
-  if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+  const cleanId = String(id || '').trim();
+  if (!cleanId) {
+    return null;
+  }
+
+  if (mongoose.connection.readyState === 1) {
     try {
-      const doc = await UserModel.findById(id).lean().exec();
+      const doc = await UserModel.findOne(buildUserIdFilter(cleanId) as any)
+        .lean()
+        .exec();
       if (doc) {
         return doc as unknown as IUser;
       }
@@ -43,7 +51,7 @@ export async function findLiveUserById(id: string): Promise<IUser | null> {
   }
 
   for (const user of sharedUserMemoryStore.values()) {
-    if (String(user._id) === id) {
+    if (String(user._id) === cleanId) {
       return user;
     }
   }

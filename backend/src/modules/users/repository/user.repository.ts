@@ -1,5 +1,10 @@
 import mongoose, { Model } from 'mongoose';
-import { IUser, UserModel, sharedUserMemoryStore } from '../../auth/models/user.model';
+import {
+  IUser,
+  UserModel,
+  buildUserIdFilter,
+  sharedUserMemoryStore,
+} from '../../auth/models/user.model';
 import { ListUsersDto } from '../dto/list-users.dto';
 import { ListPendingApprovalsDto } from '../dto/list-pending-approvals.dto';
 
@@ -195,9 +200,17 @@ export class UserRepository implements IUserRepository {
   }
 
   async findById(id: string): Promise<IUser | null> {
-    if (this.isDbConnected() && mongoose.isValidObjectId(id)) {
+    const cleanId = String(id || '').trim();
+    if (!cleanId) {
+      return null;
+    }
+
+    if (this.isDbConnected()) {
       try {
-        const doc = await this.userModel.findById(id).lean().exec();
+        const doc = await this.userModel
+          .findOne(buildUserIdFilter(cleanId) as any)
+          .lean()
+          .exec();
         if (doc) {
           return doc as unknown as IUser;
         }
@@ -295,13 +308,11 @@ export class UserRepository implements IUserRepository {
           updatedAt: new Date(),
         };
 
-        const filter = mongoose.isValidObjectId(id)
-          ? { _id: new mongoose.Types.ObjectId(id) }
-          : { _id: id };
+        const filter = buildUserIdFilter(id);
 
         const updated = await this.userModel
           .findOneAndUpdate(
-            filter,
+            filter as any,
             { $set: updatePayload },
             { returnDocument: 'after', runValidators: true },
           )
@@ -367,10 +378,10 @@ export class UserRepository implements IUserRepository {
   async approveUser(id: string, adminId: string): Promise<IUser | null> {
     const approvedAt = new Date();
 
-    if (this.isDbConnected() && mongoose.isValidObjectId(id)) {
+    if (this.isDbConnected()) {
       try {
         const filter = {
-          _id: new mongoose.Types.ObjectId(id),
+          ...buildUserIdFilter(id),
           approvalStatus: 'pending',
         };
 
@@ -434,10 +445,10 @@ export class UserRepository implements IUserRepository {
     const rejectedAt = new Date();
     const trimmedReason = reason && reason.trim() ? reason.trim() : null;
 
-    if (this.isDbConnected() && mongoose.isValidObjectId(id)) {
+    if (this.isDbConnected()) {
       try {
         const filter = {
-          _id: new mongoose.Types.ObjectId(id),
+          ...buildUserIdFilter(id),
           approvalStatus: 'pending',
         };
 

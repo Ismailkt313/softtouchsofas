@@ -31,6 +31,10 @@ export interface IUser {
 
 const UserSchema = new Schema<IUser>(
   {
+    _id: {
+      type: Schema.Types.Mixed,
+      default: () => new mongoose.Types.ObjectId().toHexString(),
+    },
     name: {
       type: String,
       required: true,
@@ -110,6 +114,19 @@ const UserSchema = new Schema<IUser>(
 
 export const UserModel: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+
+export function buildUserIdFilter(id: string): Record<string, unknown> {
+  const cleanId = String(id || '').trim();
+  if (mongoose.isValidObjectId(cleanId)) {
+    return {
+      $or: [
+        { _id: cleanId },
+        { _id: new mongoose.Types.ObjectId(cleanId) },
+      ],
+    };
+  }
+  return { _id: cleanId };
+}
 
 export const sharedUserMemoryStore: Map<string, IUser> = new Map();
 

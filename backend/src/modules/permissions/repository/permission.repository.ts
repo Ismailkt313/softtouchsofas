@@ -94,7 +94,7 @@ export class PermissionRepository {
             },
             $inc: { version: 1 },
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
         )
         .lean()
         .exec();

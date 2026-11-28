@@ -133,7 +133,7 @@ export class ProjectRepository implements IProjectRepository {
                   createdBy: 'system',
                 },
               },
-              { upsert: true, new: true },
+              { upsert: true, returnDocument: 'after' },
             )
             .exec();
         }
@@ -633,7 +633,7 @@ export class ProjectRepository implements IProjectRepository {
         .findByIdAndUpdate(
           recordId,
           { $set: sanitizedUpdate },
-          { new: true, runValidators: true },
+          { returnDocument: 'after', runValidators: true },
         )
         .lean()
         .exec();

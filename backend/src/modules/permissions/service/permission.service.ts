@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import {
+  buildUserIdFilter,
   IUser,
   seedSharedUserMemoryStore,
   sharedUserMemoryStore,
@@ -199,10 +200,8 @@ export class PermissionService {
     }
 
     if (mongoose.connection.readyState === 1) {
-      if (!mongoose.isValidObjectId(cleanId)) {
-        throw new PermissionTargetNotFoundError();
-      }
-      const existing = await UserModel.findById(cleanId).lean().exec();
+      const idFilter = buildUserIdFilter(cleanId);
+      const existing = await UserModel.findOne(idFilter as any).lean().exec();
       if (!existing) {
         throw new PermissionTargetNotFoundError();
       }
@@ -213,8 +212,8 @@ export class PermissionService {
         );
       }
 
-      const updated = await UserModel.findByIdAndUpdate(
-        cleanId,
+      const updated = await UserModel.findOneAndUpdate(
+        idFilter as any,
         {
           $set: {
             permissionOverrides: {
@@ -225,7 +224,7 @@ export class PermissionService {
             updatedAt: new Date(),
           },
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
         .lean()
         .exec();
