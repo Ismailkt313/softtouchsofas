@@ -209,7 +209,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit }) {
                 inputMode="email"
                 className={`users-form-field__input${errors.email ? ' users-form-field__input--error' : ''
                   }`}
-                placeholder="staff@softtouchsofas.com"
+                placeholder="staff@softtouchsofas.in"
                 value={values.email}
                 onChange={handleChange}
                 disabled={isSubmitting}

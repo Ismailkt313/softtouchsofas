@@ -65,9 +65,8 @@ function Header() {
 
   return (
     <header
-      className={`header ${scrolled ? 'scrolled' : ''} ${
-        location.pathname === '/manufacturing' ? 'header-light-page' : ''
-      }`}
+      className={`header ${scrolled ? 'scrolled' : ''} ${location.pathname === '/manufacturing' ? 'header-light-page' : ''
+        }`}
     >
       <Link to="/" className="brand brand-wordmark" aria-label="Soft Touch Sofas home">
         Soft Touch Sofas
@@ -852,16 +851,16 @@ function Detail({ kind }: { kind: 'collection' | 'project' }) {
 
   const secondaryImage: PhotoKind = isCollection
     ? ({
-        sofas: 'international',
-        custom: 'sofaFinish',
-        curtains: 'draperyRoom',
-        upholstery: 'upholsteryCraft',
-      } as Record<string, PhotoKind>)[item.slug]
+      sofas: 'international',
+      custom: 'sofaFinish',
+      curtains: 'draperyRoom',
+      upholstery: 'upholsteryCraft',
+    } as Record<string, PhotoKind>)[item.slug]
     : ({
-        'residential-interiors': 'sectional',
-        'hospitality-spaces': 'curtainDetail',
-        'commercial-interiors': 'sofaFinish',
-      } as Record<string, PhotoKind>)[item.slug];
+      'residential-interiors': 'sectional',
+      'hospitality-spaces': 'curtainDetail',
+      'commercial-interiors': 'sofaFinish',
+    } as Record<string, PhotoKind>)[item.slug];
 
   const gallery: PhotoKind[] = isCollection
     ? item.slug === 'curtains'
@@ -1196,11 +1195,10 @@ function SEO() {
     document.title =
       location.pathname === '/'
         ? 'Soft Touch Sofas — Sofas, Curtains & Upholstery'
-        : `${
-            last
-              ? last.replace(/\b\w/g, (c) => c.toUpperCase())
-              : 'Soft Touch Sofas'
-          } | Soft Touch Sofas`;
+        : `${last
+          ? last.replace(/\b\w/g, (c) => c.toUpperCase())
+          : 'Soft Touch Sofas'
+        } | Soft Touch Sofas`;
 
     document
       .querySelector('meta[name="description"]')
@@ -1213,7 +1211,7 @@ function SEO() {
       .querySelector('link[rel="canonical"]')
       ?.setAttribute(
         'href',
-        `${import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.com'}${location.pathname}`,
+        `${import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.in'}${location.pathname}`,
       );
 
     document.getElementById('company-schema')?.remove();
@@ -1224,7 +1222,7 @@ function SEO() {
       '@context': 'https://schema.org',
       '@type': hasVerifiedLocation ? 'LocalBusiness' : 'Organization',
       name: company.name,
-      url: import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.com',
+      url: import.meta.env.VITE_SITE_URL || 'https://softtouchsofas.in',
     };
 
     if (hasVerifiedLocation) {

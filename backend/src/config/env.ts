@@ -34,13 +34,13 @@ export const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
 
   DEFAULT_ADMIN: {
-    email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@softtouchsofas.com',
+    email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@softtouchsofas.in',
     password: process.env.DEFAULT_ADMIN_PASSWORD || 'AdminSecurePassword123!',
     name: process.env.DEFAULT_ADMIN_NAME || 'Admin Manager',
   },
 
   DEFAULT_DATA_ENTRY: {
-    email: process.env.DEFAULT_DATA_ENTRY_EMAIL || 'dataentry@softtouchsofas.com',
+    email: process.env.DEFAULT_DATA_ENTRY_EMAIL || 'dataentry@softtouchsofas.in',
     password:
       process.env.DEFAULT_DATA_ENTRY_PASSWORD || 'DataEntrySecurePassword123!',
     name: process.env.DEFAULT_DATA_ENTRY_NAME || 'Data Entry Specialist',

@@ -85,7 +85,7 @@ export function LoginForm({ onLoginSuccess, onNavigateToSignup }) {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="name@softtouchsofas.com"
+              placeholder="name@softtouchsofas.in"
               className="auth-field__input"
               value={values.email}
               onChange={handleChange}

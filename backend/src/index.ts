@@ -21,7 +21,7 @@ import miscBusinessRouter from './modules/misc-business';
 const app = express();
 const PORT = env.PORT;
 
-app.use(  
+app.use(
   helmet({
     frameguard: false,
     contentSecurityPolicy: false,
